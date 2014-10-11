@@ -1,0 +1,58 @@
+GIT
+  remote: https://github.com/hamstergem/hamster.git
+  revision: bfa1f21204ffa2cb72d93a309be7c7c9374fad99
+  specs:
+    hamster (1.0.1.pre.rc2)
+      atomic (~> 1.1)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    atomic (1.1.16)
+    atomic (1.1.16-java)
+    coderay (1.1.0)
+    concurrent-ruby (0.7.0)
+    concurrent-ruby (0.7.0-java)
+    connection_pool (2.0.0)
+    eventmachine (1.0.3)
+    eventmachine (1.0.3-java)
+    ffi (1.9.5-java)
+    hiredis (0.4.5)
+    hiredis (0.4.5-java)
+    jdbc-mysql (5.1.31)
+    jrjackson (0.2.7)
+    json (1.8.1)
+    json (1.8.1-java)
+    method_source (0.8.2)
+    pry (0.10.1)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
+    pry (0.10.1-java)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
+      spoon (~> 0.0)
+    redis (3.0.7)
+    slop (3.6.0)
+    spoon (0.0.4)
+      ffi
+    thread_safe (0.3.4)
+    thread_safe (0.3.4-java)
+
+PLATFORMS
+  java
+  ruby
+
+DEPENDENCIES
+  concurrent-ruby
+  connection_pool (~> 2.0.0)
+  eventmachine
+  hamster (~> 1.0)!
+  hiredis (~> 0.4.5)
+  jdbc-mysql
+  jrjackson
+  json
+  pry
+  redis (~> 3.0.1)
+  thread_safe
