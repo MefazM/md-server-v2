@@ -21,11 +21,13 @@ Storage.configure do |conf|
   conf.password = ENV['PASSWORD']
   conf.game_settings_yml_path = ENV['GAME_SETTINGS_YML_PATH']
 end
+
 Storage.setup!
 
 Overlord.configure do |conf|
   conf.num_threads = ENV['NUM_THREADS']
 end
+
 Overlord.run!
 
 Overlord.observe(:login, LoginActor.new)
@@ -34,4 +36,5 @@ Server.configure do |conf|
   conf.ip = ENV['IP']
   conf.port = ENV['PORT']
 end
+
 Server.dispatch!

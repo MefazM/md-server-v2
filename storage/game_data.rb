@@ -72,6 +72,8 @@ module Storage
           }
         }
 
+        self.freeze
+
         TheLogger.info 'Game data loaded...'
       end
 

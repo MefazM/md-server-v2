@@ -16,11 +16,13 @@ module Server
     map_request :unit_production_task, as: :process_player_action
     map_request :spell_cast, as: :process_battle_action
     map_request :response_battle_invite, as: :process_lobby_action
-    map_request :ping, as: :process_sytem_action
+    map_request :ping, as: :send_pong_action
     map_request :building_production_task, as: :process_player_action
     map_request :do_harvesting, as: :process_player_action
     map_request :current_mine, as: :process_player_action
     map_request :reload_gd, as: :process_sytem_action
+
+    map_request :request_gamedata, as: :send_gamedata_action
 
     attr_reader :uid
 
@@ -67,8 +69,12 @@ module Server
       end
     end
 
-    def process_sytem_action payload
+    def send_pong_action payload
       send_data ['pong', {counter: payload[:counter] + 1}]
+    end
+
+    def send_gamedata_action payload
+      send_data ['send_gamedata', { game_data: Storage::GameData.initialization_data }]
     end
 
     def send_data data
