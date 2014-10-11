@@ -14,3 +14,5 @@ gem 'thread_safe'
 gem 'jrjackson'
 
 gem 'concurrent-ruby'
+
+gem 'dotenv'

@@ -30,7 +30,7 @@ class Overlord
 
       @threads = []
 
-      @num_threads.times do
+      @num_threads.to_i.times do
         @threads << Thread.new {
 
           loop {

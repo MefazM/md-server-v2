@@ -14,6 +14,7 @@ GEM
     concurrent-ruby (0.7.0)
     concurrent-ruby (0.7.0-java)
     connection_pool (2.0.0)
+    dotenv (1.0.1)
     eventmachine (1.0.3)
     eventmachine (1.0.3-java)
     ffi (1.9.5-java)
@@ -47,6 +48,7 @@ PLATFORMS
 DEPENDENCIES
   concurrent-ruby
   connection_pool (~> 2.0.0)
+  dotenv
   eventmachine
   hamster (~> 1.0)!
   hiredis (~> 0.4.5)

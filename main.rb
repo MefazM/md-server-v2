@@ -6,28 +6,32 @@ require 'actor/overlord'
 
 require 'actor/login_actor'
 require 'storage/storage'
+require 'dotenv'
+
+Dotenv.load
 
 Thread.abort_on_exception = true
 
 Storage.configure do |conf|
-  conf.redis_pool_size = 20
-  conf.mysql_pool_size = 20
-  conf.host = 'localhost'
-  conf.db_name = 'game_cms'
-  conf.user_name = 'root'
-  conf.password = ''
+  conf.redis_pool_size = ENV['REDIS_POOL_SIZE']
+  conf.mysql_pool_size = ENV['MYSQL_POOL_SIZE']
+  conf.host = ENV['HOST']
+  conf.db_name = ENV['DB_NAME']
+  conf.user_name = ENV['USER_NAME']
+  conf.password = ENV['PASSWORD']
+  conf.game_settings_yml_path = ENV['GAME_SETTINGS_YML_PATH']
 end
-Storage.create!
+Storage.setup!
 
 Overlord.configure do |conf|
-  conf.num_threads = 10
+  conf.num_threads = ENV['NUM_THREADS']
 end
 Overlord.run!
 
 Overlord.observe(:login, LoginActor.new)
 
 Server.configure do |conf|
-  conf.ip = '0.0.0.0'
-  conf.port = '27014'
+  conf.ip = ENV['IP']
+  conf.port = ENV['PORT']
 end
 Server.dispatch!

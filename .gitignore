@@ -1,0 +1,26 @@
+# Ignore bundler config.
+/.bundle
+/tmp
+*.rbc
+/log
+## Environment normalisation:
+/.bundle
+/.env
+# these should all be checked in to normalise the environment:
+# Gemfile.lock, .ruby-version, .ruby-gemset
+# unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
+.rvmrc
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
