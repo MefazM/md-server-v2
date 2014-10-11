@@ -31,8 +31,6 @@ module Server
       @uid = [:sock, SecureRandom.hex(5)].join.to_sym
       @buffer = ''
       @auth_id = nil
-
-      @rand = rand(0...100)
     end
 
     def post_init
@@ -70,7 +68,7 @@ module Server
     end
 
     def process_sytem_action payload
-      send_data ['pong', {counter: payload[:counter] + 1, rand: @rand}]
+      send_data ['pong', {counter: payload[:counter] + 1}]
     end
 
     def send_data data
