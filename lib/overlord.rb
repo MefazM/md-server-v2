@@ -1,7 +1,6 @@
 require 'thread_safe'
 require 'json'
 
-
 class Overlord
 
   class << self
@@ -22,6 +21,10 @@ class Overlord
 
     def push_request data
       @requests_queue << data
+    end
+
+    def [] name
+      @actors[name]
     end
 
     def run!

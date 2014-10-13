@@ -35,40 +35,40 @@ module Storage
         end
 
         @ai_presets = {
-          :ai_easy => {
-            :units => {:spearman => 10, :crusader => 99999999},
-            :activity_period => 9.0,
+          ai_easy: {
+            units: {spearman: 10, crusader: 99999999},
+            activity_period: 9.0,
 
-            :level => -1,
-            :name => "Wilford Dragan (easy)",
+            level: -1,
+            name: "Wilford Dragan (easy)",
 
-            :heal => [:circle_earth],
-            :buff => [:arrow_air, :arrow_fire],
-            :debuff => [:arrow_water, :z_earth],
-            :atk_spell => [:rect_water, :z_fire]
+            heal: [:circle_earth],
+            buff: [:arrow_air, :arrow_fire],
+            debuff: [:arrow_water, :z_earth],
+            atk_spell: [:rect_water, :z_fire]
           },
-          :ai_normal => {
-            :units => {:spearman => 50, :slinger => 15, :scout => 10, :crusader => 99999999},
-            :activity_period => 6.0,
-            :level => 0,
-            :name => "Galkir Cantilever (normal)",
+          ai_normal: {
+            units: {spearman: 50, slinger: 15, scout: 10, crusader: 99999999},
+            activity_period: 6.0,
+            level: 0,
+            name: "Galkir Cantilever (normal)",
 
-            :heal => [:arrow_earth, :circle_earth],
-            :buff => [:arrow_air, :arrow_fire],
-            :debuff => [:rect_water, :arrow_water, :z_fire ],
-            :atk_spell => [:rect_air, :z_earth, :circle_water]
+            heal: [:arrow_earth, :circle_earth],
+            buff: [:arrow_air, :arrow_fire],
+            debuff: [:rect_water, :arrow_water, :z_fire ],
+            atk_spell: [:rect_air, :z_earth, :circle_water]
           },
-          :ai_hard => {
-            :units => {:spearman => 250, :adept => 20, :slinger => 150, :scout => 50, :crusader => 99999999},
-            :activity_period => 3.0,
+          ai_hard: {
+            units: {spearman: 250, adept: 20, slinger: 150, scout: 50, crusader: 99999999},
+            activity_period: 3.0,
 
-            :level => 2,
-            :name => "Krag Zarkanan (hard)",
+            level: 2,
+            name: "Krag Zarkanan (hard)",
 
-            :heal => [:arrow_earth, :circle_earth],
-            :buff => [:arrow_air, :arrow_fire],
-            :debuff => [:rect_water, :arrow_water, :z_fire ],
-            :atk_spell => [:rect_air, :z_earth, :circle_water, :z_air, :z_water, :circle_fire]
+            heal: [:arrow_earth, :circle_earth],
+            buff: [:arrow_air, :arrow_fire],
+            debuff: [:rect_water, :arrow_water, :z_fire ],
+            atk_spell: [:rect_air, :z_earth, :circle_water, :z_air, :z_water, :circle_fire]
           }
         }
 
@@ -96,10 +96,11 @@ module Storage
 
       def initialization_data
         {
-          :buildings_production => @buildings_produce_units,
-          :units_data => @units_data,
-          :buildings_data => @buildings_data,
-          :spells => spells_grouped_by_gesture
+          buildings_production: @buildings_produce_units,
+          units_data: @units_data,
+          buildings_data: @buildings_data,
+          spells: spells_grouped_by_gesture,
+          version: VERSION
         }
       end
 
@@ -195,15 +196,15 @@ module Storage
             data[:depends_on_building_uid] = building_uid
             @buildings_produce_units[building_uid] ||= []
             @buildings_produce_units[building_uid] << {
-              :uid => unit_uid,
-              :level => unit[:depends_on_building_level]
+              uid: unit_uid,
+              level: unit[:depends_on_building_level]
             }
           end
 
           @units_data[unit_uid] = data
           #Score paid for killing this unit
           @battle_score_settings[unit_uid] = {
-            :score_price => data[:score_price] || 0
+            score_price: data[:score_price] || 0
           }
 
         end
@@ -235,11 +236,11 @@ module Storage
           end
 
           @buildings_data[key][:actions] = {
-            :build => is_updateable.call(building[:uid], building[:level]),
-            :info => @coin_generator_uid != building_uid,
-            :units => is_unit_producer.call(building[:uid], building[:level]),
-            :harvest_collect => @coin_generator_uid == building_uid,
-            :harvest_info => @coin_generator_uid == building_uid
+            build: is_updateable.call(building[:uid], building[:level]),
+            info: @coin_generator_uid != building_uid,
+            units: is_unit_producer.call(building[:uid], building[:level]),
+            harvest_collect: @coin_generator_uid == building_uid,
+            harvest_info: @coin_generator_uid == building_uid
           }
 
           @buildings_data[key][:common_info] = building_common_info building_uid
@@ -254,7 +255,7 @@ module Storage
           info[:extra] = @settings[:coins_production][:coins_generation_per_level]
         when @storage_building_uid
           storage_capacity_per_level = @settings[:coins_production][:storage_capacity_per_level]
-          info[:extra] = storage_capacity_per_level.map{|l| {:storage_capacity_per => l}}
+          info[:extra] = storage_capacity_per_level.map{|l| {storage_capacity_per: l}}
         else
           info[:units] = @buildings_produce_units[uid]
         end
@@ -271,16 +272,16 @@ module Storage
 
           time = spell_data[:time] || 0
           spell_prototype = {
-            :uid => uid,
-            :time_s => time * 0.001,
-            :time_ms => time,
-            :area => spell_data[:area],
-            :vertical_area => spell_data[:vertical_area],
-            :mana_cost => spell_data[:mana_cost],
-            :description => spell_data[:description],
-            :name => spell_data[:name],
-            :spellbook_timing => spell_data[:spellbook_timing],
-            # :client_description => spell_data[:client_description]
+            uid: uid,
+            time_s: time * 0.001,
+            time_ms: time,
+            area: spell_data[:area],
+            vertical_area: spell_data[:vertical_area],
+            mana_cost: spell_data[:mana_cost],
+            description: spell_data[:description],
+            name: spell_data[:name],
+            spellbook_timing: spell_data[:spellbook_timing],
+            # client_description: spell_data[:client_description]
           }
 
           client_description_left = []
@@ -293,8 +294,8 @@ module Storage
           end
 
           spell_prototype[:client_description] = {
-            :right => client_description_right.join("\n"),
-            :left => client_description_left.join("\n")
+            right: client_description_right.join("\n"),
+            left: client_description_left.join("\n")
           }
 
           # Get spel attrs

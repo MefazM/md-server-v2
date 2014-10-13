@@ -1,6 +1,6 @@
 require 'securerandom'
 require 'json'
-require 'actor/overlord'
+require 'lib/overlord'
 require 'server/request_perform'
 
 module Server
@@ -22,7 +22,7 @@ module Server
     map_request :current_mine, as: :process_player_action
     map_request :reload_gd, as: :process_sytem_action
 
-    map_request :request_gamedata, as: :send_gamedata_action
+    map_request :request_game_data, as: :send_gamedata_action
 
     attr_reader :uid
 
@@ -74,7 +74,7 @@ module Server
     end
 
     def send_gamedata_action payload
-      send_data ['send_gamedata', { game_data: Storage::GameData.initialization_data }]
+      send_data ['game_data', Storage::GameData.initialization_data]
     end
 
     def send_data data
@@ -84,10 +84,10 @@ module Server
     def receive_data data
       @buffer += data
 
-      loop {
+      loop do
         str_start = @buffer.index MESSAGE_START_TOKEN
         str_end = @buffer.index MESSAGE_END_TOKEN
-        if str_start and str_end
+        if str_start || str_end
           message = @buffer.slice!(str_start .. str_end + 12)
           json = message.slice(str_start + 15 .. str_end - 1)
 
@@ -96,8 +96,9 @@ module Server
         else
           break
         end
-      }
+      end
 
     end
+
   end
 end

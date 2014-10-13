@@ -1,5 +1,5 @@
-require 'actor/abstract_actor'
-require 'actor/player_actor'
+require 'lib/abstract_actor'
+require 'actors/player_actor'
 require 'lib/logger'
 
 class LoginActor < AbstractActor
@@ -20,14 +20,14 @@ class LoginActor < AbstractActor
     end
 
     if Overlord.not_exists? player_id
-      Overlord.observe(player_id, PlayerActor.new(id, email, username))
+      Overlord.observe(player_id, Player::Actor.new(id, email, username))
     end
 
     Server.connections[sender_uid].authorize! id
 
     @players_connections_map[player_id] = sender_uid
 
-    send_data(['authorised', {uid: id, email: email, username: username}], sender_uid)
+    send_data(['authorised', Overlord[player_id].initialization_data], sender_uid)
   end
 
   private
@@ -61,12 +61,12 @@ class LoginActor < AbstractActor
 
     TheLogger.info "New player created. id = #{player_id}"
 
-    Storage.redis_pool.with do |redis|
-      redis.hset("players:#{player_id}:resources", "last_harvest_time", Time.now.to_i)
-      redis.hset("players:#{player_id}:resources", 'coins', 0)
-      redis.hset("players:#{player_id}:resources", 'harvester_storage', 0)
-      redis.hset("players:#{player_id}:resources", "last_mana_compute_time", Time.now.to_i)
-    end
+    # Storage.redis_pool.with do |redis|
+    #   redis.hset("players:#{player_id}:resources", "last_harvest_time", Time.now.to_i)
+    #   redis.hset("players:#{player_id}:resources", 'coins', 0)
+    #   redis.hset("players:#{player_id}:resources", 'harvester_storage', 0)
+    #   redis.hset("players:#{player_id}:resources", "last_mana_compute_time", Time.now.to_i)
+    # end
 
     player_id
   end

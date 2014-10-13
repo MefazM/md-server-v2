@@ -2,9 +2,9 @@
 require 'pry'
 require 'version'
 require 'server/server'
-require 'actor/overlord'
+require 'lib/overlord'
 
-require 'actor/login_actor'
+require 'actors/login_actor'
 require 'storage/storage'
 require 'dotenv'
 
