@@ -2,9 +2,7 @@ require 'thread_safe'
 require 'json'
 
 class Overlord
-
   class << self
-
     attr_accessor :num_threads
 
     def configure
@@ -19,7 +17,7 @@ class Overlord
       @actors[name].nil?
     end
 
-    def push_request(data)
+    def push_action(data)
       @requests_queue << data
     end
 
@@ -38,15 +36,21 @@ class Overlord
 
       @num_threads.to_i.times do
         @threads << Thread.new {
-
           loop {
-
             request = @requests_queue.pop
-
             if request
-              name, action, *data = *request
-binding.pry
-              @actors[name].method(action).call(data)
+              begin
+                name, action, payload = request
+
+                @actors[name].method(action).call(payload)
+
+              rescue Exception => e
+                TheLogger.error <<-MSG
+                  Can't call actor by name= '#{name}', action: '#{action}'
+                  #{e}
+                  #{e.backtrace.join('\n')}
+                MSG
+              end
 
             else
               #TODO: use blocking queue instead
@@ -56,12 +60,5 @@ binding.pry
         }
       end
     end
-
-    private
-
-    def pop_request
-
-    end
-
   end
 end

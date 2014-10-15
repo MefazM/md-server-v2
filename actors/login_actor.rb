@@ -9,13 +9,13 @@ class LoginActor < AbstractActor
   end
 
   def login(data)
-    binding.pry
+    # binding.pry
     login_data, connection_uid = *data
 
     
 
     id, email, username = find_or_create(login_data)
-    player_id = ['player_', id].join.to_sym
+    player_id = ['player',id].join('_').to_sym
 
     initialization_data = if Overlord.not_observed?(player_id)
       player = Player::Actor.new(id, email, username, connection_uid)
