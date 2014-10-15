@@ -15,7 +15,7 @@ class Overlord
       @actors[name] = actor
     end
 
-    def not_exists?(name)
+    def not_observed?(name)
       @actors[name].nil?
     end
 
@@ -44,9 +44,9 @@ class Overlord
             request = @requests_queue.pop
 
             if request
-              name, action, data, sender_uid = *request
-
-              @actors[name].method(action).call(data, sender_uid)
+              name, action, *data = *request
+binding.pry
+              @actors[name].method(action).call(data)
 
             else
               #TODO: use blocking queue instead

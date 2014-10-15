@@ -12,8 +12,10 @@ module Player
 
     # include RedisMapper
 
-    def initialize(id, email, username)
-      @id, @email, @username = id, email, username
+    attr_accessor :connection_uid
+
+    def initialize(id, email, username, connection_uid)
+      @id, @email, @username, @connection_uid = id, email, username, connection_uid
 
       @coins_storage = CoinsStorage.new(@id)
       @coins_storage.compute!(2)
@@ -43,8 +45,8 @@ module Player
   #     MSG
   # end
 
-    def do_harvesting(data, sender_uid)
-
+    def do_harvesting(data)
+      puts(data.inspect)
     end
 
     def initialization_data

@@ -8,26 +8,32 @@ class LoginActor < AbstractActor
     @players_connections_map = ThreadSafe::Cache.new
   end
 
-  def login(data, sender_uid)
-    id, email, username = find_or_create data
+  def login(data)
+    binding.pry
+    login_data, connection_uid = *data
 
+    
+
+    id, email, username = find_or_create(login_data)
     player_id = ['player_', id].join.to_sym
 
-    if @players_connections_map[player_id]
+    initialization_data = if Overlord.not_observed?(player_id)
+      player = Player::Actor.new(id, email, username, connection_uid)
+      Overlord.observe(player_id, player)
+
+      player.initialization_data
+    else
       TheLogger.warn "Player already connected! Drop previous connection..."
-      old_connection_uid = @players_connections_map[player_id]
+      old_connection_uid = Overlord[player_id].connection_uid
       Server.connections[old_connection_uid].close_connection_after_writing
+
+      Overlord[player_id].connection_uid = connection_uid
+      Overlord[player_id].initialization_data
     end
 
-    if Overlord.not_exists? player_id
-      Overlord.observe(player_id, Player::Actor.new(id, email, username))
-    end
+    Server.connections[connection_uid].authorize!(player_id)
 
-    Server.connections[sender_uid].authorize! id
-
-    @players_connections_map[player_id] = sender_uid
-
-    send_data(['authorised', Overlord[player_id].initialization_data], sender_uid)
+    send_data(['authorised', initialization_data], connection_uid)
   end
 
   private

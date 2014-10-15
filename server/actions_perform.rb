@@ -9,7 +9,7 @@ module Server
     def self.map_action *params
       request, handler = *params
 
-      # handler.merge! autorized: false
+      handler.merge! autorized: false
 
       @@registered_actions ||= {}
       @@registered_actions[request] = handler
@@ -21,6 +21,14 @@ module Server
       end
     end
 
+    def authorize! auth_uid
+      @auth_uid = auth_uid
+    end
+
+    def autorized?
+      not @auth_uid.nil?
+    end
+
     def perform(request, payload)
       handler = @@registered_actions[request.to_sym]
 
@@ -29,10 +37,10 @@ module Server
         return
       end
 
-      # if handler[:autorized] and not autorized?
-      #   TheLogger.error "Can't perform unautorized request: [#{request}]!"
-      #   return
-      # end
+      if handler[:autorized] and not autorized?
+        TheLogger.error "Can't perform unautorized request: [#{request}]!"
+        return
+      end
 
       method(handler[:as]).call(request, payload)
 
