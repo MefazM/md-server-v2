@@ -1,28 +1,29 @@
 require 'securerandom'
 require 'json'
 require 'lib/overlord'
-require 'server/request_perform'
+require 'server/actions_perform'
 
 module Server
   class ConnectionHandler < EM::Connection
-    include RequestPerform
 
-    map_request :login, as: :process_login_action
-    # map_request :player, as: :process_player_action
-    map_request :new_battle, as: :process_lobby_action
-    map_request :battle_start, as: :process_battle_action
-    map_request :lobby_data, as: :process_lobby_action
-    map_request :spawn_unit, as: :process_battle_action
-    map_request :unit_production_task, as: :process_player_action
-    map_request :spell_cast, as: :process_battle_action
-    map_request :response_battle_invite, as: :process_lobby_action
-    map_request :ping, as: :send_pong_action
-    map_request :building_production_task, as: :process_player_action
-    map_request :do_harvesting, as: :process_player_action
-    map_request :current_mine, as: :process_player_action
-    map_request :reload_gd, as: :process_sytem_action
+    include ActionsPerform
 
-    map_request :request_game_data, as: :send_gamedata_action
+    map_action :login, as: :process_login_action
+    # map_action :player, as: :process_player_action
+    map_action :new_battle, as: :process_lobby_action
+    map_action :battle_start, as: :process_battle_action
+    map_action :lobby_data, as: :process_lobby_action
+    map_action :spawn_unit, as: :process_battle_action
+    map_action :unit_production_task, as: :process_player_action
+    map_action :spell_cast, as: :process_battle_action
+    map_action :response_battle_invite, as: :process_lobby_action
+    map_action :ping, as: :send_pong_action
+    map_action :building_production_task, as: :process_player_action
+    map_action :do_harvesting, as: :process_player_action
+    map_action :current_mine, as: :process_player_action
+    map_action :reload_gd, as: :process_sytem_action
+
+    map_action :request_game_data, as: :send_gamedata_action
 
     attr_reader :uid
 
@@ -51,29 +52,29 @@ module Server
 
     # TODO: Kill connections if they push messages to dead actors
 
-    def process_login_action payload
-      Overlord.push_request([:login, payload, @uid])
+    def process_login_action(action, payload)
+      Overlord.push_request([:login, action, payload, @uid])
     end
 
-    def process_lobby_action payload
-
-    end
-
-    def process_battle_action payload
+    def process_lobby_action(action, payload)
 
     end
 
-    def process_player_action payload
+    def process_battle_action(action, payload)
+
+    end
+
+    def process_player_action(action, payload)
       if autorized?
-        Overlord.push_request([['player_', @auth_id].join.to_sym, payload, @uid])
+        Overlord.push_request([['player_', @auth_id].join.to_sym, action, payload, @uid])
       end
     end
 
-    def send_pong_action payload
+    def send_pong_action(action, payload)
       send_data ['pong', {counter: payload[:counter] + 1}]
     end
 
-    def send_gamedata_action payload
+    def send_gamedata_action(action, payload)
       send_data ['game_data', Storage::GameData.initialization_data]
     end
 

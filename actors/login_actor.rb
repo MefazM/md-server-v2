@@ -8,8 +8,8 @@ class LoginActor < AbstractActor
     @players_connections_map = ThreadSafe::Cache.new
   end
 
-  def act message, sender_uid
-    id, email, username = find_or_create message
+  def login(data, sender_uid)
+    id, email, username = find_or_create data
 
     player_id = ['player_', id].join.to_sym
 
@@ -32,7 +32,7 @@ class LoginActor < AbstractActor
 
   private
 
-  def find_or_create login_data
+  def find_or_create(login_data)
     TheLogger.info "Player logging in (Token = #{login_data[:token]})"
 
     authentication = Storage.mysql_pool.with do |conn|
@@ -46,7 +46,7 @@ class LoginActor < AbstractActor
 
   private
 
-  def create_player login_data
+  def create_player(login_data)
     player_id = Storage.mysql_pool.with do |conn|
 
       id = conn.insert('players', {:email => login_data[:email], :username => login_data[:name]})
@@ -71,7 +71,7 @@ class LoginActor < AbstractActor
     player_id
   end
 
-  def get_player_data id
+  def get_player_data(id)
     player_data = Storage.mysql_pool.with do |conn|
       conn.select("SELECT * FROM players WHERE id = '#{id}' ").first
     end

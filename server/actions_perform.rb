@@ -1,23 +1,23 @@
 require 'lib/logger'
 
 module Server
-  module RequestPerform
+  module ActionsPerform
     def self.included(base)
       base.send :extend, ClassMethods
     end
 
-    def self.map_request *params
+    def self.map_action *params
       request, handler = *params
 
-      handler.merge! autorized: false
+      # handler.merge! autorized: false
 
       @@registered_actions ||= {}
       @@registered_actions[request] = handler
     end
 
     module ClassMethods
-      def map_request request, handler
-        Server::RequestPerform.map_request request.to_sym, handler
+      def map_action request, handler
+        ActionsPerform.map_action request.to_sym, handler
       end
     end
 
@@ -29,11 +29,12 @@ module Server
         return
       end
 
-      if handler[:autorized] and not autorized?
-        TheLogger.error "Can't perform unautorized request: [#{request}]!"
-        return
-      end
-      send(handler[:as], payload)
+      # if handler[:autorized] and not autorized?
+      #   TheLogger.error "Can't perform unautorized request: [#{request}]!"
+      #   return
+      # end
+
+      method(handler[:as]).call(request, payload)
 
       rescue Exception => e
         TheLogger.error <<-MSG

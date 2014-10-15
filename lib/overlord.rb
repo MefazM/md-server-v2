@@ -11,20 +11,23 @@ class Overlord
       yield self
     end
 
-    def observe name, actor
+    def observe(name, actor)
       @actors[name] = actor
     end
 
-    def not_exists? name
+    def not_exists?(name)
       @actors[name].nil?
     end
 
-    def push_request data
+    def push_request(data)
       @requests_queue << data
     end
 
-    def [] name
-      @actors[name]
+    def [](name)
+      actor = @actors[name]
+      raise "Attempt to call a dead actor - #{name}" if actor.nil?
+
+      actor
     end
 
     def run!
@@ -41,13 +44,12 @@ class Overlord
             request = @requests_queue.pop
 
             if request
+              name, action, data, sender_uid = *request
 
-              actor = @actors[request[0]]
-              if actor
-                actor.act request[1], request[2]
-              end
+              @actors[name].method(action).call(data, sender_uid)
 
             else
+              #TODO: use blocking queue instead
               sleep 0.1
             end
           }

@@ -4,6 +4,8 @@ require 'lib/player/score'
 require 'lib/player/coins_storage'
 require 'lib/player/coins_mine'
 require 'lib/player/mana_storage'
+require 'lib/player/units'
+require 'lib/player/buildings'
 
 module Player
   class Actor < AbstractActor
@@ -23,11 +25,25 @@ module Player
 
       @mana_storage = ManaStorage.new(@id)
       @mana_storage.compute_at_shard!(@score.current_level)
+
+      @buildings = Buildings.new(@id)
+      @units = Units.new(@id)
     end
 
-    def act message, sender_uid
+  # def act(action, data, sender_uid)
+  #   puts "Player##{@id} resived: #{action}, #{data}, #{sender_uid}"
 
-      puts "PLAYER!!: #{message.inspect}"
+  #   method(action).call(data, sender_uid)
+
+  #   rescue Exception => e
+  #     TheLogger.error <<-MSG
+  #       Can't act action: [#{action}] for player id: [#{@id}]
+  #       #{e}
+  #       #{e.backtrace.join("\n")}
+  #     MSG
+  # end
+
+    def do_harvesting(data, sender_uid)
 
     end
 

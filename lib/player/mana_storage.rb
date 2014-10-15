@@ -12,7 +12,7 @@ module Player
       restore_from_redis(@redis_key, {
         last_mana_compute_time: Time.now.to_i,
         mana_storage_amount: 0
-      }){ |v| v.to_i }
+      }){|v| v.to_i }
     end
 
     def compute_at_shard!(level)
