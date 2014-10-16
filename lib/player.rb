@@ -18,9 +18,10 @@ module Player
   include Authorisation
   include ActionsPerform
 
-  map_action Request::LOGIN, as: :process_login_action
-  map_action Request::GAME_DATA, as: :send_gamedata_action
-  map_action Request::HARVESTING, as: :make_harvesting, authorized: true
+  map_action Receive::LOGIN, as: :process_login_action
+  map_action Receive::GAME_DATA, as: :send_gamedata_action
+  map_action Receive::HARVESTING, as: :make_harvesting, authorized: true
+  map_action Receive::PING, as: :send_pong_action, authorized: true
 
   # map_action :player, as: :process_player_action
   # map_action :new_battle, as: :process_lobby_action
@@ -44,6 +45,11 @@ module Player
   end
 
   def make_harvesting(_)
+
+    earned = @coins_mine.harvest(@coins_storage.remains)
+
+    # send_data([''])
+
     puts('make_harvesting')
   end
 
@@ -66,11 +72,15 @@ module Player
     @units = Units.new(@id)
 
 
-    send_data(['authorised', initialization_data])
+    send_data([Send::AUTHORISED, initialization_data])
   end
 
   def send_gamedata_action(data)
-    send_data ['game_data', Storage::GameData.initialization_data]
+    send_data([Send::GAME_DATA, Storage::GameData.initialization_data])
+  end
+
+  def send_pong_action(data)
+    send_data([Send::PONG, initialization_data])
   end
 
   def initialization_data

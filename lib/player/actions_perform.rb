@@ -21,14 +21,6 @@ module Player
       end
     end
 
-    def authorize!(auth_uid)
-      @player_id = auth_uid
-    end
-
-    def not_authorized?
-      @player_id.nil?
-    end
-
     def perform(action, payload)
       handler = @@registered_actions[action.to_sym]
 

@@ -30,7 +30,7 @@ end
 
 Overlord.run!
 
-Overlord.observe(:login, LoginActor.new)
+# Overlord.observe(:login, LoginActor.new)
 
 Server.configure do |conf|
   conf.ip = ENV['IP']

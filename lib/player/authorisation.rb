@@ -1,31 +1,12 @@
 module Player
   module Authorisation
 
-    def authorised?
-      !@id.nil?
+    def not_authorized?
+      @player_id.nil?
     end
 
     def authorise!(login_data)
       @player_id, @email, @username = find_or_create(login_data)
-
-
-      # initialization_data = if Overlord.not_observed?(player_id)
-      #   player = Player::Actor.new(id, email, username, connection_uid)
-      #   Overlord.observe(player_id, player)
-
-      #   player.initialization_data
-      # else
-      #   TheLogger.warn "Player already connected! Drop previous connection..."
-      #   old_connection_uid = Overlord[player_id].connection_uid
-      #   Server.connections[old_connection_uid].close_connection_after_writing
-
-      #   Overlord[player_id].connection_uid = connection_uid
-      #   Overlord[player_id].initialization_data
-      # end
-
-      # Server.connections[connection_uid].authorize!(player_id)
-
-      # send_data(['authorised', initialization_data], connection_uid)
     end
 
     private
