@@ -44,13 +44,14 @@ module Player
 
   end
 
-  def make_harvesting(_)
-
+  def make_harvesting(data)
     earned = @coins_mine.harvest(@coins_storage.remains)
 
-    # send_data([''])
-
-    puts('make_harvesting')
+    send_data([Send::GOLD_STORAGE_CAPACITY, {
+      earned: earned,
+      coins_storage: @coins_storage.to_hash,
+      coins_mine: @coins_mine.to_hash,
+    }])
   end
 
   def process_login_action(login_data)
@@ -71,7 +72,6 @@ module Player
     @buildings = Buildings.new(@id)
     @units = Units.new(@id)
 
-
     send_data([Send::AUTHORISED, initialization_data])
   end
 
@@ -80,7 +80,7 @@ module Player
   end
 
   def send_pong_action(data)
-    send_data([Send::PONG, initialization_data])
+    send_data([Send::PONG, {counter: data[:counter] + 1, time: data[:time]}])
   end
 
   def initialization_data

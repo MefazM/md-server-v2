@@ -38,23 +38,24 @@ class Overlord
         @threads << Thread.new {
           loop {
             request = @requests_queue.pop
+
             if request
-              begin
+              # begin
                 name, action, payload = request
 
                 @actors[name].method(action).call(payload)
 
-              rescue Exception => e
-                TheLogger.error <<-MSG
-                  Can't call actor by name= '#{name}', action: '#{action}'
-                  #{e}
-                  #{e.backtrace.join('\n')}
-                MSG
-              end
+              # rescue Exception => e
+              #   TheLogger.error <<-MSG
+              #     Can't call actor by name= '#{name}', action: '#{action}'
+              #     #{e}
+              #     #{e.backtrace.join('\n')}
+              #   MSG
+              # end
 
             else
               #TODO: use blocking queue instead
-              sleep 0.1
+              sleep 0.0001
             end
           }
         }

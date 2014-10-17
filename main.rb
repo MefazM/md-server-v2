@@ -4,7 +4,6 @@ require 'version'
 require 'server/server'
 require 'lib/overlord'
 
-require 'actors/login_actor'
 require 'storage/storage'
 require 'dotenv'
 
@@ -29,8 +28,6 @@ Overlord.configure do |conf|
 end
 
 Overlord.run!
-
-# Overlord.observe(:login, LoginActor.new)
 
 Server.configure do |conf|
   conf.ip = ENV['IP']

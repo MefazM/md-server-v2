@@ -23,4 +23,5 @@ module Send
   AUTHORISED = :ad
   GAME_DATA = :gd
   PONG = :png
+  GOLD_STORAGE_CAPACITY = :gsc
 end
