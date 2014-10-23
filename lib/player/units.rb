@@ -9,10 +9,14 @@ module Player
       @player_id = player_id
       @redis_key = ['players', @player_id].join(':')
 
-      restore_from_redis(@redis_key, {
+      fields = {
         units: {},
         units_queue: {}
-      }){|v| JSON.parse(v, {:symbolize_names => true})}
+      }
+
+      restore_from_redis(@redis_key, fields) do |field|
+        JSON.parse(field, {:symbolize_names => true})
+      end
 
     end
 

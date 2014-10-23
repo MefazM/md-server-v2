@@ -19,7 +19,7 @@ module Player
       # level = @buildings[Storage::GameData.coin_generator_uid] || 0
       data = Storage::GameData.coins_harvester level
 
-      @income = data[:amount]
+      @income = data[:income]
       @capacity = data[:harvest_capacity]
     end
 
@@ -34,7 +34,7 @@ module Player
       @coins_mine_amount += earned
       @coins_mine_amount = [@coins_mine_amount, @capacity].min
 
-      left = @coins_mine_amount - earned
+      left = @coins_mine_amount - max_earned
 
       if left > 0
         earned = max_earned

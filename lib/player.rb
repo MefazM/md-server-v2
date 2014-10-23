@@ -46,6 +46,7 @@ module Player
 
   def make_harvesting(data)
     earned = @coins_mine.harvest(@coins_storage.remains)
+    @coins_storage.put_coins(earned)
 
     send_data([Send::GOLD_STORAGE_CAPACITY, {
       earned: earned,

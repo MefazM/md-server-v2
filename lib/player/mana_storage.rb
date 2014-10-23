@@ -16,11 +16,11 @@ module Player
     end
 
     def compute_at_shard!(level)
-      compute!(level, :amount_at_shard)
+      compute!(level, :income_at_shard)
     end
 
     def compute_at_battle!(level)
-      compute!(level, :amount_at_battle)
+      compute!(level, :income_at_battle)
     end
 
     def to_hash

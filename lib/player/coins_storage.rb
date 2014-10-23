@@ -26,6 +26,9 @@ module Player
     end
 
     def put_coins(count)
+
+      @coins_storage_amount += count
+
       if @coins_storage_amount >= @capacity
         @coins_storage_amount = @capacity
       end
