@@ -51,7 +51,7 @@ module Player
     end
 
     def save!
-
+      save_to_redis(@redis_key, [:coins_storage_amount])
     end
 
   end

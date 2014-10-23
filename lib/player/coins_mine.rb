@@ -56,7 +56,7 @@ module Player
     end
 
     def save!
-
+      save_to_redis(@redis_key, [:last_harvest_time, :coins_mine_amount])
     end
 
   end

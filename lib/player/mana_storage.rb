@@ -42,7 +42,7 @@ module Player
     end
 
     def save!
-
+      save_to_redis(@redis_key, [:last_mana_compute_time, :mana_storage_amount])
     end
 
     def to_hash

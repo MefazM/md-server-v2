@@ -38,10 +38,19 @@ module Player
   # map_action :reload_gd, as: :process_sytem_action
 
   def kill!
+    save!
+    close_connection_after_writing
     # persist player
-    # kill soket
+    # close socket
     # destroy object
 
+  end
+
+  def save!
+    @coins_storage.save!
+    @coins_mine.save!
+    @score.save!
+    @mana_storage.save!
   end
 
   def make_harvesting(data)

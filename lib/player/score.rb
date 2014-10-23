@@ -46,6 +46,10 @@ module Player
       }
     end
 
+    def save!
+      save_to_redis(@redis_key, [:score])
+    end
+
     # def update_score(data)
     #   opponent_id = determine_opponent! data
     #   is_winner = @id == data[:winner_id]
