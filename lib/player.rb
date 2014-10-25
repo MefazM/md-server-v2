@@ -1,4 +1,3 @@
-require 'lib/abstract_actor'
 require 'lib/player/redis_mapper'
 require 'lib/player/score'
 require 'lib/player/coins_storage'
@@ -8,20 +7,24 @@ require 'lib/player/units'
 require 'lib/player/buildings'
 require 'lib/player/authorisation'
 require 'lib/player/unique_connection'
-require 'lib/player/actions_perform'
+require 'lib/player/requests_dispatcher'
 
 require 'server/actions_headers'
 
+require 'lib/battle/director'
+
 module Player
+
+  SAVE_TO_REDIS_INTERVAL = 360
 
   include UniqueConnection
   include Authorisation
-  include ActionsPerform
+  include RequestsDispatcher
 
-  map_action Receive::LOGIN, as: :process_login_action
-  map_action Receive::GAME_DATA, as: :send_gamedata_action
-  map_action Receive::HARVESTING, as: :make_harvesting, authorized: true
-  map_action Receive::PING, as: :send_pong_action, authorized: true
+  map_requests Receive::LOGIN, as: :process_login_action
+  map_requests Receive::GAME_DATA, as: :send_gamedata_action
+  map_requests Receive::HARVESTING, as: :make_harvesting, authorized: true
+  map_requests Receive::PING, as: :send_pong_action, authorized: true
 
   # map_action :player, as: :process_player_action
   # map_action :new_battle, as: :process_lobby_action
@@ -37,22 +40,6 @@ module Player
   # map_action :current_mine, as: :process_player_action, authorized: true
   # map_action :reload_gd, as: :process_sytem_action
 
-  def kill!
-    save!
-    close_connection_after_writing
-    # persist player
-    # close socket
-    # destroy object
-
-  end
-
-  def save!
-    @coins_storage.save!
-    @coins_mine.save!
-    @score.save!
-    @mana_storage.save!
-  end
-
   def make_harvesting(data)
     earned = @coins_mine.harvest(@coins_storage.remains)
     @coins_storage.put_coins(earned)
@@ -64,10 +51,7 @@ module Player
     }])
   end
 
-  def process_login_action(login_data)
-    authorise!(login_data)
-    make_uniq!
-
+  def restore_from_redis
     @coins_storage = CoinsStorage.new(@id)
     @coins_storage.compute!(2)
 
@@ -82,6 +66,20 @@ module Player
     @buildings = Buildings.new(@id)
     @units = Units.new(@id)
 
+    @serialization_timer = Overlord.perform_every(SAVE_TO_REDIS_INTERVAL, [@uid, :save_player_to_redis, nil])
+  end
+
+  def save_player_to_redis(data = nil)
+    @coins_storage.save!
+    @coins_mine.save!
+    @score.save!
+    @mana_storage.save!
+  end
+
+  def process_login_action(login_data)
+    authorise!(login_data)
+    make_uniq!
+    restore_from_redis
     send_data([Send::AUTHORISED, initialization_data])
   end
 
@@ -91,6 +89,12 @@ module Player
 
   def send_pong_action(data)
     send_data([Send::PONG, {counter: data[:counter] + 1, time: data[:time]}])
+  end
+
+  def kill!
+    @serialization_timer.cancel
+    save_player_to_redis
+    close_connection_after_writing
   end
 
   def initialization_data

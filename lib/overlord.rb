@@ -1,8 +1,9 @@
 require 'thread_safe'
 require 'json'
 
-class Overlord
+module Overlord
   class << self
+
     attr_accessor :num_threads
 
     def configure
@@ -17,8 +18,16 @@ class Overlord
       @actors[name].nil?
     end
 
-    def push_action(data)
+    def <<(data)
       @queue << data
+    end
+
+    def perform_after(interval, data)
+      EventMachine::Timer.new(interval) { @queue << data }
+    end
+
+    def perform_every(interval, data)
+      EventMachine::PeriodicTimer.new(interval) { @queue << data }
     end
 
     def [](name)
@@ -31,7 +40,6 @@ class Overlord
     def run!
       @queue = Queue.new
       @actors = ThreadSafe::Cache.new
-
       @threads = []
 
       @num_threads.to_i.times do

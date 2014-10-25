@@ -12,5 +12,10 @@ module Player
 
       @@map[@player_id] = @uid
     end
+
+    def kill_all_players!
+
+    end
+
   end
 end
