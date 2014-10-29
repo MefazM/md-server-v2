@@ -12,71 +12,73 @@ module Player
       restore_from_redis(@redis_key, {
         buildings: {},
         buildings_queue: {}
-      }){|v| JSON.parse(v, {:symbolize_names => true})}
-
+      }){|v| JSON.parse(v, {symbolize_names: true})}
     end
 
-    def update(building_uid, construction_time, level)
-      # @buildings_queue[building_uid] = {
-      #   :finish_at => construction_time + Time.now.to_f,
-      #   :construction_time => construction_time,
-      #   :level => level
-      # }
+    def queue
+      @buildings_queue
     end
 
-    def building_ready?(uid)
-      # !@buildings_queue[uid].nil?
+    def update_data(uid)
+      target_level = (@buildings[uid] || 0) + 1
+      Storage::GameData.building("#{uid}_#{target_level}")
     end
 
-    # def process_buildings_queue current_time
-    #   @buildings_queue.each do |building_uid, task|
-    #     if task[:finish_at] < current_time
-    #       @buildings_queue.delete(building_uid)
-    #       # Each building stores in uid:level pair.
-    #       # @buildings[building_uid].nil? - means that building has 0 level
-    #       if @buildings[building_uid].nil?
-    #         @buildings[building_uid] = 1
-    #       else
-    #         # After update - increase building level
-    #         @buildings[building_uid] += 1
-    #       end
+    def updateable?(uid)
+      @buildings_queue[uid].nil? and update_data(uid) != nil
+    end
 
-    #       send_sync_building_state(building_uid, @buildings[building_uid])
+    def complite_update(uid)
+      return nil if @buildings_queue[uid].nil?
+      update = @buildings_queue[uid]
+      @buildings_queue.delete(uid)
+      # update building level in the hash
+      @buildings[uid] = update[:level]
 
-    #       after_building_updates building_uid
-    #     end
-    #   end
-    # end
+      update
+    end
 
-    # def after_building_updates building_uid
-    #   case building_uid
-    #   # update coins storage
-    #   when @storage_building_uid
-    #     compute_storage_capacity
-    #     send_coins_storage_capacity
-    #   end
-    # end
+    def push_update(update)
+      @buildings_queue[update[:uid].to_sym] = {
+        adding_time: Time.now.to_i,
+        construction_time: update[:production_time],
+        level: update[:level],
+        uid: update[:uid]
+      }
+    end
 
-    def to_hash
-      queue = {}
+    def coins_mine_level
+      @buildings[Storage::GameData.coin_generator_uid] || 0
+    end
+
+    def coins_storage_level
+      @buildings[Storage::GameData.storage_building_uid] || 0
+    end
+
+    def export
+      buildings = {}
+
+      @buildings.each do |uid, level|
+        buildings[uid] = {level: level, ready: true, uid: uid}
+      end
+
       unless @buildings_queue.empty?
-        current_time = Time.now.to_f
-        @buildings_queue.each do |building_uid, task|
-          task_info = {
-            :finish_time => (task[:finish_at] - Time.now.to_f) * 1000,
-            :construction_time => task[:construction_time],
-            :level => task[:level],
-            :uid => building_uid
+        @buildings_queue.each do |uid, update|
+          time_left = update[:construction_time] - (Time.now.to_i - update[:adding_time])
+          buildings[uid] = {
+            finish_time: time_left,
+            construction_time: update[:construction_time],
+            level: update[:level],
+            uid: uid
           }
-
-          queue[building_uid] = task_info
         end
       end
 
-      {
-        buildings: @buildings,
-        queue: queue
-      }
+      buildings
+    end
+
+    def save!
+      save_to_redis(@redis_key, [:buildings, :buildings_queue]){|value| JSON.generate(value)}
     end
 
   end

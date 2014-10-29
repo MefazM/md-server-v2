@@ -24,4 +24,6 @@ module Send
   GAME_DATA = :gd
   PONG = :png
   GOLD_STORAGE_CAPACITY = :gsc
+  NOTIFICATION = :ntct
+  BUILDING_SYNC = :bsc
 end

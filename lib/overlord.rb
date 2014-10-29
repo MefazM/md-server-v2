@@ -14,20 +14,13 @@ module Overlord
       @actors[name] = actor
     end
 
+    def kill_actor(name)
+      @actors[name].kill!
+      @actors.delete(name)
+    end
+
     def not_observed?(name)
       @actors[name].nil?
-    end
-
-    def <<(data)
-      @queue << data
-    end
-
-    def perform_after(interval, data)
-      EventMachine::Timer.new(interval) { @queue << data }
-    end
-
-    def perform_every(interval, data)
-      EventMachine::PeriodicTimer.new(interval) { @queue << data }
     end
 
     def [](name)
@@ -35,6 +28,22 @@ module Overlord
       raise "Attempt to call a dead actor - #{name}" if actor.nil?
 
       actor
+    end
+
+    def <<(data)
+      @queue << data
+    end
+
+    def perform_after(interval, data)
+      EventMachine::next_tick {
+        EventMachine::Timer.new(interval) { @queue << data }
+      }
+    end
+
+    def perform_every(interval, data)
+      EventMachine::next_tick {
+        EventMachine::PeriodicTimer.new(interval) { @queue << data }
+      }
     end
 
     def run!
@@ -47,7 +56,10 @@ module Overlord
           loop do
             # begin
             name, action, payload = @queue.deq
-            @actors[name].method(action).call(payload)
+            actor = @actors[name]
+            if actor
+              @actors[name].method(action).call(payload)
+            end
 
             # rescue Exception => e
             #   TheLogger.error <<-MSG

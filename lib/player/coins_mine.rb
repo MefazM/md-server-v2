@@ -16,7 +16,6 @@ module Player
     end
 
     def compute!(level)
-      # level = @buildings[Storage::GameData.coin_generator_uid] || 0
       data = Storage::GameData.coins_harvester level
 
       @income = data[:income]

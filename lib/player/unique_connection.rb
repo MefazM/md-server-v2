@@ -5,9 +5,11 @@ module Player
     @@map = ThreadSafe::Cache.new
 
     def make_uniq!
-      unless @@map[@player_id].nil?
+      old_connection_name = @@map[@player_id]
+
+      unless old_connection_name.nil?
         TheLogger.warn "Player already connected! Drop previous connection..."
-        Overlord[@@map[@player_id]].kill!
+        Overlord.kill_actor(old_connection_name)
       end
 
       @@map[@player_id] = @uid

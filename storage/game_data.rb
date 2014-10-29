@@ -1,6 +1,8 @@
 require 'yaml'
 require 'lib/recursive_symbolize_keys'
 
+#TODO: rename storage_building_uid to coins_storage_building_uid
+
 module Storage
   module GameData
     class << self
@@ -231,7 +233,7 @@ module Storage
 
           @buildings_data[key] = {}
 
-          [:name, :description, :production_time, :price].each do |attr|
+          [:name, :description, :production_time, :price, :uid, :level].each do |attr|
             @buildings_data[key][attr] = building[attr]
           end
 
