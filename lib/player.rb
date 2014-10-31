@@ -9,7 +9,7 @@ require 'lib/player/authorisation'
 require 'lib/player/unique_connection'
 require 'lib/player/requests_dispatcher'
 require 'server/actions_headers'
-require 'server/send_actions'
+require 'lib/player/send_actions'
 require 'lib/battle/director'
 
 module Player
@@ -30,7 +30,15 @@ module Player
     authorise!(login_data)
     make_uniq!
     restore_player
+
     send_authorised
+    send_game_data
+
+    sync_coins
+    sync_score
+    sync_mana
+
+    start_game_scene(:world)
   end
 
   def process_harvesting(data)
@@ -85,7 +93,7 @@ module Player
         @coins_storage.compute!(@buildings.coins_storage_level)
       end
 
-      sync_building(update, true)
+      sync_building(updated, true)
     end
   end
 

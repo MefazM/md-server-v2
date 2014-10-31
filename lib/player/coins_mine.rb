@@ -50,7 +50,8 @@ module Player
       {
         income: @income,
         capacity: @capacity,
-        amount: @coins_mine_amount
+        amount: @coins_mine_amount,
+        time_offset: Time.now.to_i - @last_harvest_time
       }
     end
 

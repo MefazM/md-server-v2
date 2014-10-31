@@ -14,27 +14,32 @@ module Player
 
     def send_authorised
       send_data([Send::AUTHORISED, {
-        player_data: {
-          coins_storage: @coins_storage.to_hash,
-          coins_mine: @coins_mine.to_hash,
-          mana_storage: @mana_storage.to_hash,
-          score: @score.to_hash,
-          buildings: @buildings.export,
-          units: {
-            # restore unit production queue on client
-            queue: {},
-            ready: {},
-          },
-        },
-        start_scene: :world
+        buildings: @buildings.export,
+        units: {
+          # restore unit production queue on client
+          queue: {},
+          ready: {},
+        }
       }])
     end
     #TODO: move earned calculation to client
-    def sync_coins(earned = 0)
+    def sync_coins(earned = nil)
       send_data([Send::GOLD_STORAGE_CAPACITY, {
-        earned: earned,
         coins_storage: @coins_storage.to_hash,
         coins_mine: @coins_mine.to_hash,
+        earned: earned
+      }])
+    end
+
+    def sync_mana
+      send_data([Send::MANA_SYNC, {
+        mana_storage: @mana_storage.to_hash,
+      }])
+    end
+
+    def sync_score
+      send_data([Send::SCORE_SYNC, {
+        score: @score.to_hash
       }])
     end
 
@@ -52,6 +57,12 @@ module Player
         level: building[:level],
         ready: ready,
         construction_time: building[:production_time]
+      }])
+    end
+
+    def start_game_scene(scene_name)
+      send_data([Send::START_GAME_SCENE, {
+        name: scene_name
       }])
     end
 

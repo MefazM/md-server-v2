@@ -25,5 +25,11 @@ module Send
   PONG = :png
   GOLD_STORAGE_CAPACITY = :gsc
   NOTIFICATION = :ntct
+
   BUILDING_SYNC = :bsc
+
+  SCORE_SYNC = :scs
+  MANA_SYNC = :mns
+
+  START_GAME_SCENE = :sgs
 end
