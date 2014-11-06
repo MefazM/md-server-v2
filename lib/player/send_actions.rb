@@ -66,5 +66,20 @@ module Player
       }])
     end
 
+    def send_new_unit_task(unit_data)
+      send_data([Send::PUSH_UNIT_CONSTRUCTION_TASK, {
+        uid: unit_data[:uid],
+        time: unit_data[:production_time],
+        group: unit_data[:depends_on_building_uid]
+      }])
+    end
+
+    def send_unit_task_ready(unit_data)
+      send_data([Send::POP_UNIT_CONSTRUCTION_TASK, {
+        uid: unit_data[:uid],
+        group: unit_data[:depends_on_building_uid]
+      }])
+    end
+
   end
 end

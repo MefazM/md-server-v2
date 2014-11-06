@@ -28,11 +28,11 @@ module Player
     def create_player(login_data)
       player_id = Storage.mysql_pool.with do |conn|
 
-        id = conn.insert('players', {:email => login_data[:email], :username => login_data[:name]})
+        id = conn.insert('players', {email: login_data[:email], username: login_data[:name]})
 
         raise "Player is not created! \n #{login_data.inspect}" if id == -1
 
-        data = {:player_id => id, :provider => login_data[:provider], :token => login_data[:token]}
+        data = {player_id: id, provider: login_data[:provider], token: login_data[:token]}
         conn.insert('authentications', data)
 
         id

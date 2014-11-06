@@ -12,7 +12,7 @@ module Storage
                   :game_rate, :ai_presets, :loser_modifier,
                   :score_to_coins_modifier, :spells_data, :default_unit_spawn_time
 
-      def load! game_settings_yml_path
+      def load!(game_settings_yml_path)
         @settings = JSON.parse(IO.read( game_settings_yml_path ))
         @settings.recursive_symbolize_keys!
 
@@ -79,18 +79,18 @@ module Storage
         TheLogger.info 'Game data loaded...'
       end
 
-      def player_level_data level
+      def player_level_data(level)
         level = [level, @max_player_level - 1].min
         @player_levels[level]
       end
 
-      def next_level_at level
+      def next_level_at(level)
         level = [level, @max_player_level - 1].min
 
         @player_levels[level][:level_at]
       end
 
-      def battle_reward level
+      def battle_reward(level)
         level = [level, @max_player_level - 1].min
 
         @player_levels[level][:static_reward]
@@ -106,7 +106,7 @@ module Storage
         }
       end
 
-      def spell_data uid
+      def spell_data(uid)
         @spells_data[uid.to_sym]
       end
 
@@ -121,22 +121,22 @@ module Storage
         grouped
       end
 
-      def unit uid
+      def unit(uid)
         @units_data[uid.to_sym]
       end
 
-      def building uid
+      def building(uid)
         @buildings_data[uid.to_sym]
       end
 
-      def mana_storage level
+      def mana_storage(level)
         max_mana_level = @settings[:mana_storage_settings].length
         level = [level, max_mana_level - 1].min
 
         @settings[:mana_storage_settings][level]
       end
 
-      def coins_harvester level
+      def coins_harvester(level)
         coins_generation_per_level = @settings[:coins_production][:coins_generation_per_level]
 
         max_harvester_level = coins_generation_per_level.length
@@ -145,7 +145,7 @@ module Storage
         coins_generation_per_level[level]
       end
 
-      def coins_storage_capacity level
+      def coins_storage_capacity(level)
         storage_capacity_per_level = @settings[:coins_production][:storage_capacity_per_level]
 
         max_storage_capacity_level = storage_capacity_per_level.length
@@ -156,7 +156,7 @@ module Storage
 
       private
 
-      def load_units mysql_connection
+      def load_units(mysql_connection)
         units = mysql_connection.select("SELECT * FROM units")
 
         @units_data = {}
@@ -166,7 +166,7 @@ module Storage
 
         units.each do |unit|
           data = {}
-          [:name, :description, :health_points,
+          [:uid, :name, :description, :health_points,
            :movement_speed, :production_time,
            :price, :score_price, :depends_on_building_level].each do |attr|
 
@@ -212,7 +212,7 @@ module Storage
         end
       end
 
-      def load_buildings mysql_connection
+      def load_buildings(mysql_connection)
         @buildings_data = {}
 
         is_updateable = Proc.new {|uid, level|
@@ -249,7 +249,7 @@ module Storage
         end
       end
 
-      def building_common_info uid
+      def building_common_info(uid)
         info = {}
 
         case uid
@@ -265,7 +265,7 @@ module Storage
         info
       end
 
-      def load_spells mysql_connection
+      def load_spells(mysql_connection)
         @spells_data = {}
         # @battle_score_settings ||= {}
         mysql_connection.select("SELECT * FROM spells").each do |spell_data|

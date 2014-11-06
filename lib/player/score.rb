@@ -39,10 +39,10 @@ module Player
       end
 
       {
-        :score => @score,#4
-        :level_at => level_at - prev_level_at,
-        :level => @level,
-        :level_score => @score - prev_level_at
+        score: @score,#4
+        level_at: level_at - prev_level_at,
+        level: @level,
+        level_score: @score - prev_level_at
       }
     end
 

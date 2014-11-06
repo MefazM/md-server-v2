@@ -24,7 +24,9 @@ module Player
   map_requests Receive::GAME_DATA, as: :process_gamedata_action
   map_requests Receive::HARVESTING, as: :process_harvesting, authorized: true
   map_requests Receive::PING, as: :process_pong_action, authorized: true
-  map_requests Receive::BUILDING_PRODUCTION_TASK, as: :construct_building, authorized: true
+  map_requests Receive::CONSTUCT_BUILDING, as: :construct_building, authorized: true
+  map_requests Receive::CONSTUCT_UNIT, as: :construct_unit, authorized: true
+
 
   def process_login_action(login_data)
     authorise!(login_data)
@@ -63,15 +65,14 @@ module Player
   end
 
   def construct_building(building_uid)
-    building_uid = building_uid.to_sym
     if @buildings.updateable?(building_uid)
       update = @buildings.update_data(building_uid)
 
       if @coins_storage.make_payment(update[:price])
-        @buildings.push_update(update)
+        @buildings.enqueue(update)
 
         period = update[:production_time]
-        Overlord.perform_after( period, [@uid, :building_update_ready, update[:uid]])
+        Overlord.perform_after(period, [@uid, :building_update_ready, building_uid])
 
         sync_building(update, false)
         sync_coins
@@ -83,7 +84,7 @@ module Player
   end
 
   def building_update_ready(building_uid)
-    updated = @buildings.complite_update(building_uid.to_sym)
+    updated = @buildings.complite_update(building_uid)
     if updated
       #TODO: refactor this case
       case updated[:uid]
@@ -95,6 +96,48 @@ module Player
 
       sync_building(updated, true)
     end
+  end
+
+  def construct_unit(unit_uid)
+    unit_data = Storage::GameData.unit(unit_uid)
+
+    building_uid = unit_data[:depends_on_building_uid]
+    building_level = unit_data[:depends_on_building_level]
+
+    if @buildings.exists?(building_uid, building_level)
+      if @coins_storage.make_payment(unit_data[:price])
+
+        group_by = unit_data[:depends_on_building_uid]
+        if @units.group_not_enqueued?(group_by)
+          period = unit_data[:production_time]
+          Overlord.perform_after(period, [@uid, :unit_production_ready, unit_uid])
+        end
+
+        @units.enqueue(unit_data)
+
+        send_new_unit_task(unit_data)
+        sync_coins
+
+      else
+        send_notification( :low_cash )
+      end
+    end
+  end
+
+  def unit_production_ready(unit_uid)
+    unit_data = Storage::GameData.unit(unit_uid)
+
+    @units.complite_task(unit_data)
+
+    group_by = unit_data[:depends_on_building_uid]
+    uid_uid, task = @units.group_next_task(group_by)
+
+    if task
+      period = task[:construction_time]
+      Overlord.perform_after(period, [@uid, :unit_production_ready, uid_uid])
+    end
+
+    send_unit_task_ready(unit_data)
   end
 
   def kill!

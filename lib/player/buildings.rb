@@ -9,10 +9,12 @@ module Player
       @player_id = player_id
       @redis_key = ['players', @player_id].join(':')
 
-      restore_from_redis(@redis_key, {
+      fields = {
         buildings: {},
         buildings_queue: {}
-      }){|v| JSON.parse(v, {symbolize_names: true})}
+      }
+
+      restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
     end
 
     def queue
@@ -20,15 +22,16 @@ module Player
     end
 
     def update_data(uid)
-      target_level = (@buildings[uid] || 0) + 1
+      target_level = (@buildings[uid.to_sym] || 0) + 1
       Storage::GameData.building("#{uid}_#{target_level}")
     end
 
     def updateable?(uid)
-      @buildings_queue[uid].nil? and update_data(uid) != nil
+      @buildings_queue[uid.to_sym].nil? and update_data(uid.to_sym) != nil
     end
 
     def complite_update(uid)
+      uid = uid.to_sym
       return nil if @buildings_queue[uid].nil?
       update = @buildings_queue[uid]
       @buildings_queue.delete(uid)
@@ -38,7 +41,7 @@ module Player
       update
     end
 
-    def push_update(update)
+    def enqueue(update)
       @buildings_queue[update[:uid].to_sym] = {
         adding_time: Time.now.to_i,
         construction_time: update[:production_time],
@@ -79,6 +82,10 @@ module Player
 
     def save!
       save_to_redis(@redis_key, [:buildings, :buildings_queue]){|value| JSON.generate(value)}
+    end
+
+    def exists?(uid, level)
+      @buildings[uid.to_sym].nil? ? false : @buildings[uid.to_sym] >= level
     end
 
   end

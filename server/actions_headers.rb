@@ -13,10 +13,9 @@ module Receive
   CAST_SPELL = :cs
   RESPONSE_BATTLE_INVITE = :rbi
   PING = :pg
-  BUILDING_PRODUCTION_TASK = :bpt
 
-  CURRENT_MINE = :cm
-  RELOAD_GAME_DATA = :rgb
+  CONSTUCT_BUILDING = :cb
+  CONSTUCT_UNIT = :cu
 end
 #RESPONSE
 module Send
@@ -32,4 +31,7 @@ module Send
   MANA_SYNC = :mns
 
   START_GAME_SCENE = :sgs
+
+  PUSH_UNIT_CONSTRUCTION_TASK = :psut
+  POP_UNIT_CONSTRUCTION_TASK = :poct
 end
