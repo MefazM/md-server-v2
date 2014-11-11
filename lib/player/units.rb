@@ -15,7 +15,9 @@ module Player
       }
 
       restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
+    end
 
+    def restore_queue
       @units_queue.keys.each{|group_by| process_group_queue(group_by)}
     end
 

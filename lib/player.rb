@@ -30,6 +30,7 @@ module Player
   def process_login_action(login_data)
     authorise!(login_data)
     make_uniq!
+
     restore_player
 
     send_game_data
@@ -147,6 +148,9 @@ module Player
     # @save_to_redis_timer = Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
 
     Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
+
+    @buildings.restore_queue
+    @units.restore_queue
   end
 
   def save!

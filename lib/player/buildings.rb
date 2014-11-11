@@ -15,13 +15,15 @@ module Player
       }
 
       restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
+    end
 
+    def restore_queue
       @buildings_queue.each do |uid, update|
         time_left = update[:construction_time] - (Time.now.to_i - update[:adding_time])
         if time_left < 0
-          Reactor << [connection_uid, :building_update_ready, update[:uid]]
+          Reactor << [@connection_uid, :building_update_ready, update[:uid]]
         else
-          Reactor.perform_after( time_left, [connection_uid, :building_update_ready, update[:uid]])
+          Reactor.perform_after( time_left, [@connection_uid, :building_update_ready, update[:uid]])
         end
       end
     end
