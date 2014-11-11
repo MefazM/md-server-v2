@@ -15,6 +15,7 @@ module Reactor
     end
 
     def kill_actor(name)
+      puts("KILL: #{name}")
       @actors[name].kill!
       @actors.delete(name)
     end
@@ -35,9 +36,9 @@ module Reactor
     end
 
     def perform_after(interval, data)
-      # EventMachine::next_tick {
+      EventMachine::next_tick {
         EventMachine::Timer.new(interval) { @queue << data }
-      # }
+      }
     end
 
     def perform_every(interval, data)
@@ -55,11 +56,11 @@ module Reactor
         @threads << Thread.new do
           loop do
             # begin
-            name, action, payload = @queue.deq
-            actor = @actors[name]
-            if actor
-              @actors[name].method(action).call(payload)
-            end
+              name, action, payload = @queue.deq
+              actor = @actors[name]
+              if actor
+                @actors[name].method(action).call(payload)
+              end
 
             # rescue Exception => e
             #   TheLogger.error <<-MSG

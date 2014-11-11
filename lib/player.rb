@@ -13,7 +13,7 @@ require 'lib/player/send_actions'
 require 'lib/battle/director'
 
 module Player
-  SAVE_TO_REDIS_INTERVAL = 360
+  SAVE_TO_REDIS_INTERVAL = 5
 
   include UniqueConnection
   include Authorisation
@@ -60,6 +60,7 @@ module Player
 
   def save_player_timer(data = nil)
     save!
+    puts('save_player_timer')
     # Run timer once more time
     Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
   end
@@ -119,8 +120,9 @@ module Player
   end
 
   def kill!
-    @save_to_redis_timer.cancel
+    # @save_to_redis_timer.cancel
     save!
+    @alive = false
     close_connection_after_writing
   end
 
@@ -142,7 +144,9 @@ module Player
 
     @units = Units.new(@player_id, @connection_uid)
 
-    @save_to_redis_timer = Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
+    # @save_to_redis_timer = Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
+
+    Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
   end
 
   def save!

@@ -8,7 +8,7 @@ module Player
       old_connection_name = @@map[@player_id]
 
       unless old_connection_name.nil?
-        TheLogger.warn "Player already connected! Drop previous connection..."
+        TheLogger.warn("Player already connected! Drop previous connection...")
         Reactor.kill_actor(old_connection_name)
       end
 
