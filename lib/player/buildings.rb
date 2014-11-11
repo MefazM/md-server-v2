@@ -5,9 +5,9 @@ module Player
 
     include RedisMapper
 
-    def initialize(player_id)
-      @player_id = player_id
-      @redis_key = ['players', @player_id].join(':')
+    def initialize(player_id, connection_uid)
+      @connection_uid = connection_uid
+      @redis_key = ['players', player_id].join(':')
 
       fields = {
         buildings: {},
@@ -15,10 +15,15 @@ module Player
       }
 
       restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
-    end
 
-    def queue
-      @buildings_queue
+      @buildings_queue.each do |uid, update|
+        time_left = update[:construction_time] - (Time.now.to_i - update[:adding_time])
+        if time_left < 0
+          Reactor << [connection_uid, :building_update_ready, update[:uid]]
+        else
+          Reactor.perform_after( time_left, [connection_uid, :building_update_ready, update[:uid]])
+        end
+      end
     end
 
     def update_data(uid)
@@ -42,12 +47,17 @@ module Player
     end
 
     def enqueue(update)
+      period = update[:production_time]
+      uid = update[:uid].to_sym
+
       @buildings_queue[update[:uid].to_sym] = {
         adding_time: Time.now.to_i,
-        construction_time: update[:production_time],
+        construction_time: period,
         level: update[:level],
         uid: update[:uid]
       }
+
+      Reactor.perform_after(period, [@connection_uid, :building_update_ready, uid])
     end
 
     def coins_mine_level

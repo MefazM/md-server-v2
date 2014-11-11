@@ -9,10 +9,10 @@ module Player
 
       unless old_connection_name.nil?
         TheLogger.warn "Player already connected! Drop previous connection..."
-        Overlord.kill_actor(old_connection_name)
+        Reactor.kill_actor(old_connection_name)
       end
 
-      @@map[@player_id] = @uid
+      @@map[@player_id] = @connection_uid
     end
 
     def kill_all_players!

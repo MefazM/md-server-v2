@@ -5,9 +5,9 @@ module Player
 
     include RedisMapper
 
-    def initialize(player_id)
-      @player_id = player_id
-      @redis_key = ['players', @player_id].join(':')
+    def initialize(player_id, connection_uid)
+      @connection_uid = connection_uid
+      @redis_key = ['players', player_id].join(':')
 
       fields = {
         units: {},
@@ -16,82 +16,100 @@ module Player
 
       restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
 
+      @units_queue.keys.each{|group_by| process_group_queue(group_by)}
     end
 
-    def enqueue(unit_data)
-      group_by = unit_data[:depends_on_building_uid]
-      uid = unit_data[:uid].to_sym
+    def process_group_queue(group_by)
+      start_time = @units_queue[group_by][:started_at]
+      elapsed_time = Time.now.to_i - start_time
 
-      @units_queue[group_by] = {} if @units_queue[group_by].nil?
-      # If player has no tasks in group
-      if @units_queue[group_by][uid].nil?
-        @units_queue[group_by][uid] = {
-          count: 1,
-          construction_time: unit_data[:production_time]
-        }
-      else
-        # Increase tasks number if such tasks exist in queue
-        @units_queue[group_by][uid][:count] += 1
+      @units_queue[group_by][:tasks].each do |task|
+        unit_uid = task[:uid].to_sym
+        task[:count].times do |i|
+
+          construction_time = @units_queue[group_by][:construction_time]
+
+          if construction_time < elapsed_time
+
+            elapsed_time -= construction_time
+            @units[unit_uid] = (@units[unit_uid] || 0) + 1
+            task[:count] -= 1
+          else
+            period = construction_time - elapsed_time
+            @units_queue[group_by][:started_at] = Time.now.to_i - elapsed_time
+
+            Reactor.perform_after(period, [@connection_uid, :unit_production_ready, unit_uid])
+            return
+          end
+
+        end
+
+        @units_queue[group_by][:tasks].shift
       end
     end
 
-    def group_not_enqueued?(group_by)
-      @units_queue[group_by.to_sym].nil? || @units_queue[group_by.to_sym].empty?
+    def enqueue(unit_data)
+      group_by = unit_data[:depends_on_building_uid].to_sym
+
+      @units_queue[group_by] = {
+        started_at: nil,
+        tasks: []
+      } if @units_queue[group_by].nil?
+
+      period = unit_data[:production_time]
+      uid = unit_data[:uid]
+
+      if @units_queue[group_by][:tasks].empty?
+        @units_queue[group_by][:started_at] = Time.now.to_i
+        @units_queue[group_by][:construction_time] = period
+
+        Reactor.perform_after(period, [@connection_uid, :unit_production_ready, uid])
+      end
+
+      task = @units_queue[group_by][:tasks].find{|t| t[:uid] == uid }
+
+      if task.nil?
+        @units_queue[group_by][:tasks] << {
+          uid: uid,
+          count: 1
+        }
+      else
+
+        task[:count] += 1
+      end
     end
 
-    def group_next_task(group_by)
-      @units_queue[group_by.to_sym].first
-    end
-
-    def complite_task(unit_data)
+    def complite_and_enque(unit_data)
       group_by = unit_data[:depends_on_building_uid]
       uid = unit_data[:uid].to_sym
 
       raise "Broken units queue! Group #{group_by} not found!" if @units_queue[group_by].nil?
-      raise "Broken units queue! Task #{uid} not found!" if @units_queue[group_by][uid].nil?
 
-      @units_queue[group_by][uid][:count] -= 1
+      @units[uid.to_sym] = (@units[uid.to_sym] || 0) + 1
 
-      if @units_queue[group_by][uid][:count] <= 0
-        @units_queue[group_by].delete(uid)
+      count = @units_queue[group_by][:tasks].first[:count] -= 1
+
+      if count < 1
+        @units_queue[group_by][:tasks].shift
+      end
+
+      task = @units_queue[group_by][:tasks].first
+      unless task.nil?
+        period = @units_queue[group_by][:construction_time]
+        @units_queue[group_by][:started_at] = Time.now.to_i
+        Reactor.perform_after(period, [@connection_uid, :unit_production_ready, task[:uid]])
       end
     end
 
     def export
-      queue = {}
-      ready = {}
-
-
+      {
+        units: @units,
+        queue: @units_queue
+      }
     end
 
-  # def units_in_queue_export
-  #   current_time = Time.now.to_f
-  #   queue = {}
-  #   unless @units_queue.empty?
-  #     @units_queue.each do |group_uid, group|
-  #       queue[group_uid] = []
-
-  #       group.each do |unit_uid, task|
-  #         task_info = {
-  #           :uid => unit_uid,
-  #           :count => task[:count],
-  #           # :production_time => task[:construction_time]
-  #         }
-
-  #         if task[:finish_at]
-  #           # task_info[:started_at] = (( task[:finish_at] - current_time ) * 1000 ).to_i
-  #           # task_info[:started_at] = (task[:started_at] * 1000 ).to_i
-  #           task_info[:production_time] = (( task[:finish_at] - current_time ) * 1000 ).to_i
-
-  #         end
-  #         # Collect task
-  #         queue[group_uid] << task_info
-  #       end
-  #     end
-  #   end
-
-  #   queue
-  # end
-
+    def save!
+      save_to_redis(@redis_key, [:units, :units_queue]){|value| JSON.generate(value)}
+    end
   end
 end

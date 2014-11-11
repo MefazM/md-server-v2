@@ -2,7 +2,7 @@
 require 'pry'
 require 'version'
 require 'server/server'
-require 'lib/overlord'
+require 'lib/reactor'
 
 require 'storage/storage'
 require 'dotenv'
@@ -23,11 +23,11 @@ end
 
 Storage.setup!
 
-Overlord.configure do |conf|
+Reactor.configure do |conf|
   conf.num_threads = ENV['NUM_THREADS']
 end
 
-Overlord.run!
+Reactor.run!
 
 Server.configure do |conf|
   conf.ip = ENV['IP']

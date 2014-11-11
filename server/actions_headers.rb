@@ -32,6 +32,5 @@ module Send
 
   START_GAME_SCENE = :sgs
 
-  PUSH_UNIT_CONSTRUCTION_TASK = :psut
-  POP_UNIT_CONSTRUCTION_TASK = :poct
+  SYNC_UNITS = :su
 end

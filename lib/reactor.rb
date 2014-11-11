@@ -1,7 +1,7 @@
 require 'thread_safe'
 require 'json'
 
-module Overlord
+module Reactor
   class << self
 
     attr_accessor :num_threads
@@ -35,9 +35,9 @@ module Overlord
     end
 
     def perform_after(interval, data)
-      EventMachine::next_tick {
+      # EventMachine::next_tick {
         EventMachine::Timer.new(interval) { @queue << data }
-      }
+      # }
     end
 
     def perform_every(interval, data)

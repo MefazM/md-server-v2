@@ -14,12 +14,7 @@ module Player
 
     def send_authorised
       send_data([Send::AUTHORISED, {
-        buildings: @buildings.export,
-        units: {
-          # restore unit production queue on client
-          queue: {},
-          ready: {},
-        }
+        buildings: @buildings.export
       }])
     end
     #TODO: move earned calculation to client
@@ -60,24 +55,16 @@ module Player
       }])
     end
 
+    def sync_units
+      send_data([Send::SYNC_UNITS, {
+        units: @units.export,
+        server_time: Time.now.to_i
+      }])
+    end
+
     def start_game_scene(scene_name)
       send_data([Send::START_GAME_SCENE, {
         name: scene_name
-      }])
-    end
-
-    def send_new_unit_task(unit_data)
-      send_data([Send::PUSH_UNIT_CONSTRUCTION_TASK, {
-        uid: unit_data[:uid],
-        time: unit_data[:production_time],
-        group: unit_data[:depends_on_building_uid]
-      }])
-    end
-
-    def send_unit_task_ready(unit_data)
-      send_data([Send::POP_UNIT_CONSTRUCTION_TASK, {
-        uid: unit_data[:uid],
-        group: unit_data[:depends_on_building_uid]
       }])
     end
 

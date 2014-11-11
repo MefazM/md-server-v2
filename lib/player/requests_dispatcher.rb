@@ -1,4 +1,4 @@
-require 'lib/overlord'
+require 'lib/reactor'
 require 'lib/logger'
 
 module Player
@@ -34,7 +34,7 @@ module Player
         return
       end
 
-      Overlord << [@uid, handler[:as], payload]
+      Reactor << [@connection_uid, handler[:as], payload]
     end
   end
 end

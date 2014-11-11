@@ -27,15 +27,15 @@ module Player
   map_requests Receive::CONSTUCT_BUILDING, as: :construct_building, authorized: true
   map_requests Receive::CONSTUCT_UNIT, as: :construct_unit, authorized: true
 
-
   def process_login_action(login_data)
     authorise!(login_data)
     make_uniq!
     restore_player
 
-    send_authorised
     send_game_data
+    send_authorised
 
+    sync_units
     sync_coins
     sync_score
     sync_mana
@@ -61,7 +61,7 @@ module Player
   def save_player_timer(data = nil)
     save!
     # Run timer once more time
-    Overlord.perform_after(SAVE_TO_REDIS_INTERVAL, [@uid, :save_player_timer, nil])
+    Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
   end
 
   def construct_building(building_uid)
@@ -69,16 +69,13 @@ module Player
       update = @buildings.update_data(building_uid)
 
       if @coins_storage.make_payment(update[:price])
+
         @buildings.enqueue(update)
-
-        period = update[:production_time]
-        Overlord.perform_after(period, [@uid, :building_update_ready, building_uid])
-
         sync_building(update, false)
         sync_coins
       else
 
-        send_notification( :low_cash )
+        send_notification(:low_cash)
       end
     end
   end
@@ -100,47 +97,29 @@ module Player
 
   def construct_unit(unit_uid)
     unit_data = Storage::GameData.unit(unit_uid)
-
     building_uid = unit_data[:depends_on_building_uid]
     building_level = unit_data[:depends_on_building_level]
 
     if @buildings.exists?(building_uid, building_level)
       if @coins_storage.make_payment(unit_data[:price])
 
-        group_by = unit_data[:depends_on_building_uid]
-        if @units.group_not_enqueued?(group_by)
-          period = unit_data[:production_time]
-          Overlord.perform_after(period, [@uid, :unit_production_ready, unit_uid])
-        end
-
         @units.enqueue(unit_data)
 
-        send_new_unit_task(unit_data)
+        sync_units
         sync_coins
-
       else
-        send_notification( :low_cash )
+        send_notification(:low_cash)
       end
     end
   end
 
   def unit_production_ready(unit_uid)
-    unit_data = Storage::GameData.unit(unit_uid)
-
-    @units.complite_task(unit_data)
-
-    group_by = unit_data[:depends_on_building_uid]
-    uid_uid, task = @units.group_next_task(group_by)
-
-    if task
-      period = task[:construction_time]
-      Overlord.perform_after(period, [@uid, :unit_production_ready, uid_uid])
-    end
-
-    send_unit_task_ready(unit_data)
+    @units.complite_and_enque(Storage::GameData.unit(unit_uid))
+    sync_units
   end
 
   def kill!
+    @save_to_redis_timer.cancel
     save!
     close_connection_after_writing
   end
@@ -148,7 +127,7 @@ module Player
   private
 
   def restore_player
-    @buildings = Buildings.new(@player_id)
+    @buildings = Buildings.new(@player_id, @connection_uid)
 
     @coins_storage = CoinsStorage.new(@player_id)
     @coins_storage.compute!(@buildings.coins_storage_level)
@@ -161,18 +140,9 @@ module Player
     @mana_storage = ManaStorage.new(@player_id)
     @mana_storage.compute_at_shard!(@score.current_level)
 
-    @units = Units.new(@player_id)
-    #TODO: refactor
-    @buildings.queue.each do |uid, update|
-      time_left = update[:construction_time] - (Time.now.to_i - update[:adding_time])
-      if time_left < 0
-        building_update_ready(uid)
-      else
-        Overlord.perform_after( time_left, [@uid, :building_update_ready, update[:uid]])
-      end
-    end
+    @units = Units.new(@player_id, @connection_uid)
 
-    Overlord.perform_after(SAVE_TO_REDIS_INTERVAL, [@uid, :save_player_timer, nil])
+    @save_to_redis_timer = Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
   end
 
   def save!
@@ -181,6 +151,7 @@ module Player
     @score.save!
     @mana_storage.save!
     @buildings.save!
+    @units.save!
   end
 
 end

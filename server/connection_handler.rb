@@ -11,21 +11,27 @@ module Server
     MESSAGE_END_TOKEN = '__JSON__END__'
 
     def initialize
-      @uid = [:sock, SecureRandom.hex(5)].join.to_sym
+      @connection_uid = [:sock, SecureRandom.hex(5)].join.to_sym
       @buffer = ''
-      Overlord.observe(@uid, self)
+      Reactor.observe(@connection_uid, self)
     end
 
     def post_init
+      @alive = true
     end
 
     def unbind
+      @alive = false
+    end
+
+    def connection_completed
+      @alive = false
     end
 
     def send_data(data)
       EventMachine::next_tick {
         super ['__JSON__START__', data.to_json, '__JSON__END__'].join
-      }
+      } if @alive
     end
 
     def receive_data(data)
