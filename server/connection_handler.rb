@@ -30,8 +30,8 @@ module Server
 
     def send_data(data)
       EventMachine::next_tick {
-        super ['__JSON__START__', data.to_json, '__JSON__END__'].join
-      } if @alive
+        super ['__JSON__START__', data.to_json, '__JSON__END__'].join if @alive
+      }
     end
 
     def receive_data(data)

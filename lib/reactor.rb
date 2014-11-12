@@ -16,8 +16,10 @@ module Reactor
 
     def kill_actor(name)
       puts("KILL: #{name}")
-      @actors[name].kill!
-      @actors.delete(name)
+      unless @actors[name].nil?
+        @actors[name].kill!
+        @actors.delete(name)
+      end
     end
 
     def not_observed?(name)

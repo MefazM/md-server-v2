@@ -29,17 +29,21 @@ module Player
 
   def process_login_action(login_data)
     authorise!(login_data)
-    make_uniq!
 
     restore_player
 
-    send_game_data
     send_authorised
+    send_game_data
 
     sync_units
     sync_coins
     sync_score
     sync_mana
+
+    @buildings.restore_queue
+    @units.restore_queue
+
+    make_uniq!
 
     start_game_scene(:world)
   end
@@ -61,7 +65,6 @@ module Player
 
   def save_player_timer(data = nil)
     save!
-    puts('save_player_timer')
     # Run timer once more time
     Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
   end
@@ -146,11 +149,7 @@ module Player
     @units = Units.new(@player_id, @connection_uid)
 
     # @save_to_redis_timer = Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
-
     Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
-
-    @buildings.restore_queue
-    @units.restore_queue
   end
 
   def save!
