@@ -5,8 +5,7 @@ module Player
 
     include RedisMapper
 
-    def initialize(player_id, connection_uid)
-      @connection_uid = connection_uid
+    def initialize(player_id)
       @redis_key = ['players', player_id].join(':')
 
       fields = {
@@ -18,41 +17,42 @@ module Player
     end
 
     def restore_queue
-      @units_queue.keys.each{|group_by| process_group_queue(group_by)}
-    end
+      not_ready_tasks = []
 
-    def process_group_queue(group_by)
-      start_time = @units_queue[group_by][:started_at]
-      elapsed_time = Time.now.to_i - start_time
+      @units_queue.each_value do |group|
+        elapsed_time = Time.now.to_f - group[:started_at]
 
-      @units_queue[group_by][:tasks].each do |task|
-        unit_uid = task[:uid].to_sym
-        task[:count].times do |i|
+        group[:tasks].delete_if do |task|
+          unit_uid = task[:uid].to_sym
+          info = Storage::GameData.unit(unit_uid)
+          progress = elapsed_time / info[:production_time]
 
-          construction_time = @units_queue[group_by][:construction_time]
+          ready_count = [progress.floor, task[:count]].min
+          @units[unit_uid] = (@units[unit_uid] || 0) + ready_count
 
-          if construction_time < elapsed_time
+          elapsed_time -= ready_count * info[:production_time]
 
-            elapsed_time -= construction_time
-            @units[unit_uid] = (@units[unit_uid] || 0) + 1
-            task[:count] -= 1
-          else
-            period = construction_time - elapsed_time
-            @units_queue[group_by][:started_at] = Time.now.to_i - elapsed_time
+          if (task[:count] -= ready_count) > 0
+            period = (1.0 - (progress % 1)) * info[:production_time]
+            group[:started_at] = Time.now.to_i - (info[:production_time] - period)
+            group[:construction_time] = info[:production_time]
 
-            Reactor.perform_after(period, [@connection_uid, :unit_production_ready, unit_uid])
-            return
+            not_ready_tasks << [unit_uid, period]
+
+            break
           end
 
-        end
+          true
 
-        @units_queue[group_by][:tasks].shift
+        end
       end
+
+      not_ready_tasks
     end
 
     def enqueue(unit_data)
       group_by = unit_data[:depends_on_building_uid].to_sym
-
+      first_in_queue = false
       @units_queue[group_by] = {
         started_at: nil,
         tasks: []
@@ -61,17 +61,19 @@ module Player
       period = unit_data[:production_time]
       uid = unit_data[:uid]
 
-      if @units_queue[group_by][:tasks].empty?
-        @units_queue[group_by][:started_at] = Time.now.to_i
-        @units_queue[group_by][:construction_time] = period
+      group = @units_queue[group_by]
 
-        Reactor.perform_after(period, [@connection_uid, :unit_production_ready, uid])
+      if group[:tasks].empty?
+        group[:started_at] = Time.now.to_i
+        group[:construction_time] = period
+
+        first_in_queue = true
       end
 
-      task = @units_queue[group_by][:tasks].find{|t| t[:uid] == uid }
+      task = group[:tasks].find{|t| t[:uid] == uid }
 
       if task.nil?
-        @units_queue[group_by][:tasks] << {
+        group[:tasks] << {
           uid: uid,
           count: 1
         }
@@ -79,28 +81,23 @@ module Player
 
         task[:count] += 1
       end
+
+      first_in_queue
     end
 
-    def complite_and_enque(unit_data)
-      group_by = unit_data[:depends_on_building_uid]
+    def complite(unit_data)
+      group = @units_queue[unit_data[:depends_on_building_uid]]
+      raise "Broken units queue! Group #{unit_data[:depends_on_building_uid]} not found!" if group.nil?
       uid = unit_data[:uid].to_sym
+      @units[uid] = (@units[uid] || 0) + 1
 
-      raise "Broken units queue! Group #{group_by} not found!" if @units_queue[group_by].nil?
+      count = group[:tasks].first[:count] -= 1
+      group[:tasks].shift if count < 1
 
-      @units[uid.to_sym] = (@units[uid.to_sym] || 0) + 1
+      return nil unless group[:tasks].first
+      group[:started_at] = Time.now.to_i
 
-      count = @units_queue[group_by][:tasks].first[:count] -= 1
-
-      if count < 1
-        @units_queue[group_by][:tasks].shift
-      end
-
-      task = @units_queue[group_by][:tasks].first
-      unless task.nil?
-        period = @units_queue[group_by][:construction_time]
-        @units_queue[group_by][:started_at] = Time.now.to_i
-        Reactor.perform_after(period, [@connection_uid, :unit_production_ready, task[:uid]])
-      end
+      [group[:tasks].first[:uid], group[:construction_time]]
     end
 
     def export

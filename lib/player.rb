@@ -6,7 +6,6 @@ require 'lib/player/mana_storage'
 require 'lib/player/units'
 require 'lib/player/buildings'
 require 'lib/player/authorisation'
-require 'lib/player/unique_connection'
 require 'lib/player/requests_dispatcher'
 require 'server/actions_headers'
 require 'lib/player/send_actions'
@@ -40,9 +39,6 @@ module Player
     sync_score
     sync_mana
 
-    @buildings.restore_queue
-    @units.restore_queue
-
     make_uniq!
 
     start_game_scene(:world)
@@ -66,7 +62,7 @@ module Player
   def save_player_timer(data = nil)
     save!
     # Run timer once more time
-    Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
+    # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
   end
 
   def construct_building(building_uid)
@@ -76,6 +72,9 @@ module Player
       if @coins_storage.make_payment(update[:price])
 
         @buildings.enqueue(update)
+
+        after(:building_update_ready, update[:uid], update[:production_time])
+
         sync_building(update, false)
         sync_coins
       else
@@ -86,7 +85,7 @@ module Player
   end
 
   def building_update_ready(building_uid)
-    updated = @buildings.complite_update(building_uid)
+    updated = @buildings.complite(building_uid)
     if updated
       #TODO: refactor this case
       case updated[:uid]
@@ -101,14 +100,16 @@ module Player
   end
 
   def construct_unit(unit_uid)
-    unit_data = Storage::GameData.unit(unit_uid)
-    building_uid = unit_data[:depends_on_building_uid]
-    building_level = unit_data[:depends_on_building_level]
+    info = Storage::GameData.unit(unit_uid)
+    building_uid = info[:depends_on_building_uid]
+    building_level = info[:depends_on_building_level]
 
     if @buildings.exists?(building_uid, building_level)
-      if @coins_storage.make_payment(unit_data[:price])
+      if @coins_storage.make_payment(info[:price])
 
-        @units.enqueue(unit_data)
+        if @units.enqueue(info)
+          after(:unit_production_ready, unit_uid, info[:production_time])
+        end
 
         sync_units
         sync_coins
@@ -119,21 +120,34 @@ module Player
   end
 
   def unit_production_ready(unit_uid)
-    @units.complite_and_enque(Storage::GameData.unit(unit_uid))
+    info = Storage::GameData.unit(unit_uid)
+    next_taks = @units.complite(info)
+
+    after(:unit_production_ready, *next_taks) if next_taks
+
     sync_units
   end
 
   def kill!
-    # @save_to_redis_timer.cancel
     save!
     @alive = false
     close_connection_after_writing
   end
 
+  def inspect
+    "<Player id: #{@player_id}>"
+  end
+
   private
 
   def restore_player
-    @buildings = Buildings.new(@player_id, @connection_uid)
+
+    Reactor.link(:"p_@player_id", self)
+
+    @buildings = Buildings.new(@player_id)
+    @buildings.restore_queue.each{|not_ready_task|
+      after(:building_update_ready, *not_ready_task)
+    }
 
     @coins_storage = CoinsStorage.new(@player_id)
     @coins_storage.compute!(@buildings.coins_storage_level)
@@ -146,10 +160,13 @@ module Player
     @mana_storage = ManaStorage.new(@player_id)
     @mana_storage.compute_at_shard!(@score.current_level)
 
-    @units = Units.new(@player_id, @connection_uid)
+    @units = Units.new(@player_id)
 
-    # @save_to_redis_timer = Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
-    Reactor.perform_after(SAVE_TO_REDIS_INTERVAL, [@connection_uid, :save_player_timer, nil])
+    @units.restore_queue.each{|not_ready_task|
+      after(:unit_production_ready, *not_ready_task)
+    }
+
+    # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
   end
 
   def save!
@@ -160,5 +177,4 @@ module Player
     @buildings.save!
     @units.save!
   end
-
 end

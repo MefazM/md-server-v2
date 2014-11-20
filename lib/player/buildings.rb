@@ -5,8 +5,7 @@ module Player
 
     include RedisMapper
 
-    def initialize(player_id, connection_uid)
-      @connection_uid = connection_uid
+    def initialize(player_id)
       @redis_key = ['players', player_id].join(':')
 
       fields = {
@@ -18,14 +17,20 @@ module Player
     end
 
     def restore_queue
-      @buildings_queue.each do |uid, update|
+      not_ready_tasks = []
+      @buildings_queue.delete_if do |uid, update|
         time_left = update[:construction_time] - (Time.now.to_i - update[:adding_time])
         if time_left < 0
-          Reactor << [@connection_uid, :building_update_ready, update[:uid]]
-        else
-          Reactor.perform_after( time_left, [@connection_uid, :building_update_ready, update[:uid]])
+          @buildings[uid] = update[:level]
+          true
         end
+
+        not_ready_tasks << [update[:uid], time_left]
+
+        false
       end
+
+      not_ready_tasks
     end
 
     def update_data(uid)
@@ -37,12 +42,11 @@ module Player
       @buildings_queue[uid.to_sym].nil? and update_data(uid.to_sym) != nil
     end
 
-    def complite_update(uid)
+    def complite(uid)
       uid = uid.to_sym
-      return nil if @buildings_queue[uid].nil?
+      # return nil if @buildings_queue[uid].nil?
       update = @buildings_queue[uid]
       @buildings_queue.delete(uid)
-      # update building level in the hash
       @buildings[uid] = update[:level]
 
       update
@@ -52,14 +56,14 @@ module Player
       period = update[:production_time]
       uid = update[:uid].to_sym
 
-      @buildings_queue[update[:uid].to_sym] = {
+      @buildings_queue[uid] = {
         adding_time: Time.now.to_i,
         construction_time: period,
         level: update[:level],
         uid: update[:uid]
       }
 
-      Reactor.perform_after(period, [@connection_uid, :building_update_ready, uid])
+      # @async.after(period, [:building_update_ready, uid])
     end
 
     def coins_mine_level

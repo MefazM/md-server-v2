@@ -1,24 +1,28 @@
 class Worker
   def initialize
     @queue = Queue.new
-    @actors = ThreadSafe::Cache.new
-
-
     @thread = Thread.new do
 
-      loop do
+      loop {
+        begin
 
-        name, action, payload = @queue.deq
-        yield(name, action, payload)
+          actor, method, payload = @queue.deq
+          # yield(name, action, payload)
+          actor.method(method).call(payload) if actor && actor.alive?
 
-      end
+        rescue Exception => e
+          TheLogger.error <<-MSG
+            Can't call actor by name= '#{actor.inspect}', action: '#{method}'
+            #{e}
+            #{e.backtrace.join("\n")}
+          MSG
+        end
 
+      }
     end
-
   end
 
   def <<(data)
     @queue << data
   end
-
 end

@@ -1,19 +1,20 @@
 require 'securerandom'
-require 'json'
 require 'lib/player'
+require 'msgpack'
 
 module Server
   class ConnectionHandler < EM::Connection
-
+    include Reactor::React
     include Player
 
-    MESSAGE_START_TOKEN = '__JSON__START__'
-    MESSAGE_END_TOKEN = '__JSON__END__'
+    MSG_START_TOKEN = '__SMSG__'
+    MSG_END_TOKEN = '__EMSG__'
 
     def initialize
-      @connection_uid = [:sock, SecureRandom.hex(5)].join.to_sym
       @buffer = ''
-      Reactor.observe(@connection_uid, self)
+      # attach_to_reactor
+      # @async = AsyncCall.new
+      attach_to_worker
     end
 
     def post_init
@@ -28,22 +29,26 @@ module Server
       @alive = false
     end
 
+    def alive?
+      @alive
+    end
+
     def send_data(data)
       EventMachine::next_tick {
-        super ['__JSON__START__', data.to_json, '__JSON__END__'].join if @alive
+        super [MSG_START_TOKEN, MessagePack.pack(data), MSG_END_TOKEN].join if @alive
       }
     end
 
     def receive_data(data)
       @buffer += data
       loop do
-        str_start = @buffer.index MESSAGE_START_TOKEN
-        str_end = @buffer.index MESSAGE_END_TOKEN
+        str_start = @buffer.index(MSG_START_TOKEN)
+        str_end = @buffer.index(MSG_END_TOKEN)
         if str_start || str_end
-          message = @buffer.slice!(str_start .. str_end + 12)
-          json = message.slice(str_start + 15 .. str_end - 1)
+          str = @buffer.slice!(str_start .. str_end + 7)
+          msg = str.slice(str_start + 8 .. str_end - 1)
 
-          action, payload = *JSON.parse( json, symbolize_names: true)
+          action, payload = MessagePack.unpack( msg, :symbolize_keys => true )
           perform(action, payload)
         else
           break

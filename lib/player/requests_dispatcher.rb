@@ -34,7 +34,8 @@ module Player
         return
       end
 
-      Reactor << [@connection_uid, handler[:as], payload]
+      # @async.call([handler[:as], payload])
+      async(handler[:as], payload)
     end
   end
 end

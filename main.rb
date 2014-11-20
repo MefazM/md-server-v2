@@ -7,6 +7,8 @@ require 'lib/reactor'
 require 'storage/storage'
 require 'dotenv'
 
+require 'json'
+
 Dotenv.load
 
 Thread.abort_on_exception = true

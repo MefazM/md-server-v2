@@ -1,11 +1,4 @@
 GIT
-  remote: git://github.com/celluloid/timers.git
-  revision: 7f514a89d42901de925fc84ebcc73f125bf89777
-  specs:
-    timers (4.0.1)
-      hitimes
-
-GIT
   remote: https://github.com/hamstergem/hamster.git
   revision: bfa1f21204ffa2cb72d93a309be7c7c9374fad99
   specs:
@@ -27,13 +20,12 @@ GEM
     ffi (1.9.5-java)
     hiredis (0.4.5)
     hiredis (0.4.5-java)
-    hitimes (1.2.2)
-    hitimes (1.2.2-java)
     jdbc-mysql (5.1.31)
     jrjackson (0.2.7)
     json (1.8.1)
     json (1.8.1-java)
     method_source (0.8.2)
+    msgpack-jruby (1.4.0-java)
     pry (0.10.1)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
@@ -64,7 +56,7 @@ DEPENDENCIES
   jdbc-mysql
   jrjackson
   json
+  msgpack-jruby
   pry
   redis (~> 3.0.1)
   thread_safe
-  timers!
