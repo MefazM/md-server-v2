@@ -7,7 +7,7 @@ module Receive
 
   NEW_BATTLE = :nb
   BATTLE_START = :bs
-  LOBBY_DATA = :ld
+  # LOBBY_DATA = :ld
   SPAWN_UNIT = :su
   UNIT_PRODUCTION_TASK = :upt
   CAST_SPELL = :cs
@@ -16,6 +16,11 @@ module Receive
 
   CONSTUCT_BUILDING = :cb
   CONSTUCT_UNIT = :cu
+
+  UPDATE_LOBBY_DATA = :uld
+
+  INVITE_OPPONENT_TO_BATTLE = :iotb
+  RESPONSE_INVITATION_TO_BATTLE = :ritb
 end
 #RESPONSE
 module Send
@@ -33,4 +38,9 @@ module Send
   START_GAME_SCENE = :sgs
 
   SYNC_UNITS = :su
+
+  UPDATE_LOBBY_DATA = :uld
+
+  INVITE_TO_BATTLE = :itb
+  CANCEL_INVITE = :ci
 end

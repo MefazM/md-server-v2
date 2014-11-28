@@ -3,7 +3,7 @@ require 'server/actions_headers'
 module Player
   module SendActions
 
-    private
+    # private
 
     def send_notification(notification_uid, payload = nil)
       message = [Send::NOTIFICATION, notification_uid]
@@ -66,6 +66,22 @@ module Player
       send_data([Send::START_GAME_SCENE, {
         name: scene_name
       }])
+    end
+
+    def send_lobby_data(players, ai)
+      send_data([Send::UPDATE_LOBBY_DATA, {
+        players: players,
+        ai: ai,
+        offset: 0
+      }])
+    end
+
+    def send_invite_to_battle(data)
+      send_data([Send::INVITE_TO_BATTLE, data])
+    end
+
+    def send_cancel_invite_to_battle
+      send_data([Send::CANCEL_INVITE])
     end
 
   end

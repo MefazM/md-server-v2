@@ -7,7 +7,6 @@ class Worker
         begin
 
           actor, method, payload = @queue.deq
-          # yield(name, action, payload)
           actor.method(method).call(payload) if actor && actor.alive?
 
         rescue Exception => e

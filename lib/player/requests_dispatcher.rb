@@ -21,20 +21,19 @@ module Player
       end
     end
 
-    def perform(requests, payload)
-      handler = @@registered_requests[requests.to_sym]
+    def perform(request, payload)
+      handler = @@registered_requests[request.to_sym]
 
       if handler.nil?
-        TheLogger.error "Can't perform requests: [#{requests}], handler not found!"
+        TheLogger.error "Can't perform request: [#{request}], handler not found!"
         return
       end
 
       if handler[:authorized] and not_authorized?
-        TheLogger.error "Can't perform unauthorized requests: [#{requests}]!"
+        TheLogger.error "Can't perform unauthorized request: [#{request}]!"
         return
       end
 
-      # @async.call([handler[:as], payload])
       async(handler[:as], payload)
     end
   end

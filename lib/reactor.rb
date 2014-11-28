@@ -27,18 +27,23 @@ module Reactor
       yield self
     end
 
-    def link(name, actor)
+    def link(actor)
       @linked_actors ||= ThreadSafe::Hash.new
 
-      unless @linked_actors[name].nil?
-        @linked_actors[name].kill!
+      unless @linked_actors[actor.uid].nil?
+        TheLogger.info "Kill old connection #{actor.uid}"
+        @linked_actors[actor.uid].kill!
       end
 
-      @linked_actors[name] = actor
+      @linked_actors[actor.uid] = actor
     end
 
-    def [](name)
+    def actor(name)
       @linked_actors[name]
+    end
+
+    def actors(names)
+      @linked_actors.values_at(*names)
     end
 
     def worker

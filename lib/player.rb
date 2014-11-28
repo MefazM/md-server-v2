@@ -10,14 +10,16 @@ require 'lib/player/requests_dispatcher'
 require 'server/actions_headers'
 require 'lib/player/send_actions'
 require 'lib/battle/director'
+require 'lib/player/lobby'
 
 module Player
   SAVE_TO_REDIS_INTERVAL = 5
 
-  include UniqueConnection
   include Authorisation
   include RequestsDispatcher
   include SendActions
+
+  include Lobby::Inviteable
 
   map_requests Receive::LOGIN, as: :process_login_action
   map_requests Receive::GAME_DATA, as: :process_gamedata_action
@@ -25,6 +27,10 @@ module Player
   map_requests Receive::PING, as: :process_pong_action, authorized: true
   map_requests Receive::CONSTUCT_BUILDING, as: :construct_building, authorized: true
   map_requests Receive::CONSTUCT_UNIT, as: :construct_unit, authorized: true
+  map_requests Receive::UPDATE_LOBBY_DATA, as: :generate_lobby, authorized: true
+
+  map_requests Receive::INVITE_OPPONENT_TO_BATTLE, as: :invite_opponent_to_battle, authorized: true
+  map_requests Receive::RESPONSE_INVITATION_TO_BATTLE, as: :response_invitation_to_battle, authorized: true
 
   def process_login_action(login_data)
     authorise!(login_data)
@@ -39,9 +45,11 @@ module Player
     sync_score
     sync_mana
 
-    make_uniq!
-
     start_game_scene(:world)
+  end
+
+  def uid
+    @player_id.to_s
   end
 
   def process_harvesting(data)
@@ -128,6 +136,25 @@ module Player
     sync_units
   end
 
+  def generate_lobby(data)
+    players = Lobby.players(player_rate).delete_if{|player| player[0] == uid }
+    send_lobby_data(Lobby.players(player_rate), Lobby.generate_ai(@score.current_level))
+  end
+
+  def invite_opponent_to_battle(data)
+    puts(data.inspect)
+
+    if data[:ai]
+      create_ai_battle(data[:uid])
+    else
+      invite_to_battle(data[:uid])
+    end
+  end
+
+  def response_invitation_to_battle(data)
+    Lobby.process_invite(uid, data)
+  end
+
   def kill!
     save!
     @alive = false
@@ -142,12 +169,10 @@ module Player
 
   def restore_player
 
-    Reactor.link(:"p_@player_id", self)
+    Reactor.link(self)
 
     @buildings = Buildings.new(@player_id)
-    @buildings.restore_queue.each{|not_ready_task|
-      after(:building_update_ready, *not_ready_task)
-    }
+    @buildings.restore_queue.each{|task| after(:building_update_ready, *task) }
 
     @coins_storage = CoinsStorage.new(@player_id)
     @coins_storage.compute!(@buildings.coins_storage_level)
@@ -161,12 +186,15 @@ module Player
     @mana_storage.compute_at_shard!(@score.current_level)
 
     @units = Units.new(@player_id)
+    @units.restore_queue.each{|task| after(:unit_production_ready, *task) }
 
-    @units.restore_queue.each{|not_ready_task|
-      after(:unit_production_ready, *not_ready_task)
-    }
+    register_in_lobby
 
     # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
+  end
+
+  def player_rate
+    0
   end
 
   def save!

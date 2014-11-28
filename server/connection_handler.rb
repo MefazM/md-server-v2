@@ -12,8 +12,6 @@ module Server
 
     def initialize
       @buffer = ''
-      # attach_to_reactor
-      # @async = AsyncCall.new
       attach_to_worker
     end
 
@@ -44,15 +42,15 @@ module Server
       loop do
         str_start = @buffer.index(MSG_START_TOKEN)
         str_end = @buffer.index(MSG_END_TOKEN)
-        if str_start || str_end
-          str = @buffer.slice!(str_start .. str_end + 7)
-          msg = str.slice(str_start + 8 .. str_end - 1)
 
-          action, payload = MessagePack.unpack( msg, :symbolize_keys => true )
-          perform(action, payload)
-        else
-          break
-        end
+        break unless str_start && str_end
+
+        str = @buffer.slice!(str_start .. str_end + 7)
+        msg = str.slice(str_start + 8 .. str_end - 1)
+
+        action, payload = MessagePack.unpack( msg, :symbolize_keys => true )
+
+        perform(action, payload)
       end
 
     end

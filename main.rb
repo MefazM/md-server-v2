@@ -7,6 +7,8 @@ require 'lib/reactor'
 require 'storage/storage'
 require 'dotenv'
 
+require 'lib/player/lobby'
+
 require 'json'
 
 Dotenv.load
@@ -35,5 +37,7 @@ Server.configure do |conf|
   conf.ip = ENV['IP']
   conf.port = ENV['PORT']
 end
+
+Lobby.dispatch!
 
 Server.dispatch!
