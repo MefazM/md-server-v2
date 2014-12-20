@@ -4,14 +4,6 @@ module Receive
   GAME_DATA = :gd
   HARVESTING = :hg
 
-
-  NEW_BATTLE = :nb
-  BATTLE_START = :bs
-  # LOBBY_DATA = :ld
-  SPAWN_UNIT = :su
-  UNIT_PRODUCTION_TASK = :upt
-  CAST_SPELL = :cs
-  RESPONSE_BATTLE_INVITE = :rbi
   PING = :pg
 
   CONSTUCT_BUILDING = :cb
@@ -21,6 +13,10 @@ module Receive
 
   INVITE_OPPONENT_TO_BATTLE = :iotb
   RESPONSE_INVITATION_TO_BATTLE = :ritb
+
+  READY_TO_BATTLE = :rtb
+  CAST_SPELL = :cs
+  SPAWN_UNIT = :spu
 end
 #RESPONSE
 module Send
@@ -43,4 +39,11 @@ module Send
 
   INVITE_TO_BATTLE = :itb
   CANCEL_INVITE = :ci
+
+  CREATE_NEW_BATTLE = :cnb
+  CAST_SPELL = :cs
+  SPAWN_UNIT = :spu
+  START_BATTLE = :stb
+  FINISH_BATTLE = :fshb
+  SYNC_BATTLE = :syb
 end

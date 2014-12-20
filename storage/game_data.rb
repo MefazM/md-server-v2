@@ -182,7 +182,7 @@ module Storage
               end
               # Convert attack speed in ms to server seconds
               attack_speed_key = "#{attack_type}_speed".to_sym
-              attack_data[:speed] = unit[attack_speed_key] * 0.001
+              attack_data[:speed] = unit[attack_speed_key]
 
               damage_type = unit["#{attack_type}_damage_type".to_sym]
               attack_data[:type] = damage_type unless damage_type.nil?
@@ -275,8 +275,7 @@ module Storage
           time = spell_data[:time] || 0
           spell_prototype = {
             uid: uid,
-            time_s: time * 0.001,
-            time_ms: time,
+            time: time,
             area: spell_data[:area],
             vertical_area: spell_data[:vertical_area],
             mana_cost: spell_data[:mana_cost],

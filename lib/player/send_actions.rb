@@ -14,6 +14,11 @@ module Player
 
     def send_authorised
       send_data([Send::AUTHORISED, {
+        player: {
+          uid: uid,
+          email: @email,
+          username: @username
+        },
         buildings: @buildings.export
       }])
     end
@@ -82,6 +87,33 @@ module Player
 
     def send_cancel_invite_to_battle
       send_data([Send::CANCEL_INVITE])
+    end
+
+
+
+
+    def send_create_new_battle(data)
+      send_data([Send::CREATE_NEW_BATTLE, data])
+    end
+
+    def send_cast_spell(data)
+      send_data([Send::CAST_SPELL, data])
+    end
+
+    def send_spawn_unit(data)
+      send_data([Send::SPAWN_UNIT, data])
+    end
+
+    def send_start_battle
+      send_data([Send::START_BATTLE])
+    end
+
+    def send_finish_battle(data)
+      send_data([Send::FINISH_BATTLE, data])
+    end
+
+    def send_sync_battle(data)
+      send_data([Send::SYNC_BATTLE, data])
     end
 
   end

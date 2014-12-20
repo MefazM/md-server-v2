@@ -7,7 +7,12 @@ class Worker
         begin
 
           actor, method, payload = @queue.deq
-          actor.method(method).call(payload) if actor && actor.alive?
+
+          next unless actor || actor.alive?
+
+          m = actor.method(method)
+
+          payload ? m.call(payload) : m.call
 
         rescue Exception => e
           TheLogger.error <<-MSG

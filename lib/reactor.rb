@@ -17,6 +17,10 @@ module Reactor
         EventMachine::Timer.new(after_interval) { @worker << [self, method, payload] }
       end
     end
+
+    def alive?
+      true
+    end
   end
 
   class << self
@@ -31,7 +35,7 @@ module Reactor
       @linked_actors ||= ThreadSafe::Hash.new
 
       unless @linked_actors[actor.uid].nil?
-        TheLogger.info "Kill old connection #{actor.uid}"
+        TheLogger.info "Kill old actor #{actor.uid}"
         @linked_actors[actor.uid].kill!
       end
 

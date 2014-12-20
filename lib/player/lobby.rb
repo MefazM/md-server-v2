@@ -1,4 +1,5 @@
 require 'thread_safe'
+require 'lib/battle/battle'
 
 module Lobby
 
@@ -14,12 +15,9 @@ module Lobby
     end
 
     def invite_to_battle(opponent_uid)
-      Lobby.invite(uid, opponent_uid)
+      Lobby.create_invite(uid, opponent_uid)
     end
 
-    def create_ai_battle(ai_uid)
-
-    end
   end
 
   class << self
@@ -79,7 +77,7 @@ module Lobby
       AI_PRESETS.map {|uid, preset| [uid, preset[:name], [preset[:level] + level, 0].max]}
     end
 
-    def invite(sender_uid, opponent_uid)
+    def create_invite(sender_uid, opponent_uid)
       if sender_uid == opponent_uid
         TheLogger.error("Player can't invite itself!")
         return
@@ -166,7 +164,10 @@ module Lobby
       token, decision = invite_info
 
       if decision
+
         invite = @invites[player_id].find{|i| i[:token] == token}
+        TheLogger.info("Player ##{player_id} accepted battle from #{invite[:sender_uid]}. Token = #{invite[:token]}")
+
         if invite
           freeze!(player_id)
           # Player accepted battle
@@ -174,7 +175,19 @@ module Lobby
             Reactor.actor(invite[:sender_uid]).send_cancel_invite_to_battle
           end
           @invites[player_id].clear
-          puts('create battle')
+
+          begin
+
+            Battle.create_battle(invite[:sender_uid], player_id)
+
+          rescue Exception => e
+            TheLogger.error <<-MSG
+              Error while invitation processing. Invite: #{invite_info.inspect}
+              #{e}
+              #{e.backtrace.join("\n")}
+            MSG
+          end
+
         end
       else
         cancel_invitation(player_id, token)

@@ -7,9 +7,8 @@ require 'lib/player/units'
 require 'lib/player/buildings'
 require 'lib/player/authorisation'
 require 'lib/player/requests_dispatcher'
-require 'server/actions_headers'
 require 'lib/player/send_actions'
-require 'lib/battle/director'
+require 'lib/battle/battle'
 require 'lib/player/lobby'
 
 module Player
@@ -20,6 +19,7 @@ module Player
   include SendActions
 
   include Lobby::Inviteable
+  include Battle::React
 
   map_requests Receive::LOGIN, as: :process_login_action
   map_requests Receive::GAME_DATA, as: :process_gamedata_action
@@ -31,6 +31,10 @@ module Player
 
   map_requests Receive::INVITE_OPPONENT_TO_BATTLE, as: :invite_opponent_to_battle, authorized: true
   map_requests Receive::RESPONSE_INVITATION_TO_BATTLE, as: :response_invitation_to_battle, authorized: true
+
+  map_requests Receive::READY_TO_BATTLE, as: :ready_to_battle, authorized: true
+  map_requests Receive::CAST_SPELL, as: :cast_spell, authorized: true
+  map_requests Receive::SPAWN_UNIT, as: :spawn_unit, authorized: true
 
   def process_login_action(login_data)
     authorise!(login_data)
@@ -52,22 +56,22 @@ module Player
     @player_id.to_s
   end
 
-  def process_harvesting(data)
+  def process_harvesting
     earned = @coins_mine.harvest(@coins_storage.remains)
     @coins_storage.put_coins(earned)
 
     sync_coins(earned)
   end
 
-  def process_gamedata_action(data)
+  def process_gamedata_action
     send_game_data
   end
 
-  def process_pong_action(data)
+  def process_pong_action
     send_pong
   end
 
-  def save_player_timer(data = nil)
+  def save_player_timer
     save!
     # Run timer once more time
     # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
@@ -136,16 +140,17 @@ module Player
     sync_units
   end
 
-  def generate_lobby(data)
+  def generate_lobby
     players = Lobby.players(player_rate).delete_if{|player| player[0] == uid }
-    send_lobby_data(Lobby.players(player_rate), Lobby.generate_ai(@score.current_level))
+    send_lobby_data(players, Lobby.generate_ai(@score.current_level))
   end
 
   def invite_opponent_to_battle(data)
+
     puts(data.inspect)
 
     if data[:ai]
-      create_ai_battle(data[:uid])
+      Battle.create_ai_battle(uid)
     else
       invite_to_battle(data[:uid])
     end
@@ -153,6 +158,18 @@ module Player
 
   def response_invitation_to_battle(data)
     Lobby.process_invite(uid, data)
+  end
+
+  def ready_to_battle
+    Battle.set_opponent_ready(uid)
+  end
+
+  def cast_spell(data)
+    puts('cast_spell')
+  end
+
+  def spawn_unit(unit_uid)
+    Battle.spawn_unit(uid, unit_uid)
   end
 
   def kill!
@@ -163,6 +180,24 @@ module Player
 
   def inspect
     "<Player id: #{@player_id}>"
+  end
+
+  def sync_after_battle(data)
+    battle_results = data[uid]
+
+    @units.mass_remove_units(battle_results[:lost_units])
+    sync_units
+
+    @coins_storage.put_coins(battle_results[:coins])
+    sync_coins
+
+    @score.increase(battle_results[:score])
+    sync_score
+
+    @mana_storage.compute_at_battle!(@buildings.coins_mine_level)
+    sync_mana
+
+    send_finish_battle(battle_results)
   end
 
   private
@@ -189,7 +224,6 @@ module Player
     @units.restore_queue.each{|task| after(:unit_production_ready, *task) }
 
     register_in_lobby
-
     # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
   end
 

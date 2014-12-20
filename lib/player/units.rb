@@ -110,5 +110,10 @@ module Player
     def save!
       save_to_redis(@redis_key, [:units, :units_queue]){|value| JSON.generate(value)}
     end
+
+    def mass_remove_units(units)
+      units.each {|uid, count| @units.delete(uid) if (@units[uid] -= count) < 1 }
+    end
+
   end
 end
