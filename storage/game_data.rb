@@ -168,27 +168,10 @@ module Storage
           data = {}
           [:uid, :name, :description, :health_points,
            :movement_speed, :production_time,
-           :price, :score_price, :depends_on_building_level].each do |attr|
+           :price, :score_price, :depends_on_building_level,
+           :attack_speed, :attack_power_min, :attack_power_max, :attack_range].each do |attr|
 
             data[attr] = unit[attr]
-          end
-
-          [:range_attack, :melee_attack].each do |attack_type|
-            if unit[attack_type] == true
-              attack_data = {}
-              [:power_max, :power_min, :range].each do |attack_field|
-                value = unit["#{attack_type}_#{attack_field}".to_sym]
-                attack_data[attack_field] = value
-              end
-              # Convert attack speed in ms to server seconds
-              attack_speed_key = "#{attack_type}_speed".to_sym
-              attack_data[:speed] = unit[attack_speed_key]
-
-              damage_type = unit["#{attack_type}_damage_type".to_sym]
-              attack_data[:type] = damage_type unless damage_type.nil?
-
-              data[attack_type] = attack_data
-            end
           end
 
           unit_uid = unit[:uid].to_sym

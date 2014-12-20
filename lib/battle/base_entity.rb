@@ -11,6 +11,7 @@ module Battle
     DEAD = 3
     ATTACK_MELEE = 4
     ATTACK_RANGE = 5
+    ATTACK = 6
     IDLE = 42
     #
     NO_TARGET = -1
