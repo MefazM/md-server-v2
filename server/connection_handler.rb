@@ -1,6 +1,7 @@
 require 'securerandom'
 require 'lib/player'
 require 'msgpack'
+require 'json'
 
 module Server
   class ConnectionHandler < EM::Connection
@@ -33,7 +34,7 @@ module Server
 
     def send_data(data)
       EventMachine::next_tick {
-        super [MSG_START_TOKEN, MessagePack.pack(data), MSG_END_TOKEN].join if @alive
+        super [MSG_START_TOKEN, data.to_json, MSG_END_TOKEN].join if @alive
       }
     end
 
@@ -48,7 +49,7 @@ module Server
         str = @buffer.slice!(str_start .. str_end + 7)
         msg = str.slice(str_start + 8 .. str_end - 1)
 
-        action, payload = MessagePack.unpack( msg, :symbolize_keys => true )
+        action, payload = JSON.parse( msg, :symbolize_names => true )
 
         perform(action, payload)
       end

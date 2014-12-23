@@ -5,7 +5,7 @@ require 'lib/battle/calculate_battle_results'
 module Battle
   class Director
 
-    DEFAULT_UNITS_SPAWN_TIME = 1.0
+    DEFAULT_UNITS_SPAWN_TIME = 3.5
 
     include Reactor::React
     include CalculateBattleResults
@@ -158,8 +158,7 @@ module Battle
     def spawn_default_units
       @opponents.each_key{|player_id|
         spawn_unit(player_id, ['adept', 'scout', 'spearman', 'crusader'].sample)
-        spawn_unit(player_id, ['adept', 'scout', 'spearman', 'crusader'].sample)
-        spawn_unit(player_id, ['adept', 'scout', 'spearman', 'crusader'].sample)
+        # spawn_unit(player_id, 'crusader')
       }
     end
 

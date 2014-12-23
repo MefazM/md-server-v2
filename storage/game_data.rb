@@ -169,7 +169,8 @@ module Storage
           [:uid, :name, :description, :health_points,
            :movement_speed, :production_time,
            :price, :score_price, :depends_on_building_level,
-           :attack_speed, :attack_power_min, :attack_power_max, :attack_range].each do |attr|
+           :attack_speed, :attack_power_min, :attack_power_max,
+           :attack_range, :blockable_by, :distance_attack].each do |attr|
 
             data[attr] = unit[attr]
           end
