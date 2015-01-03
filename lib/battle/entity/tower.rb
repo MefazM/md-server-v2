@@ -1,4 +1,4 @@
-require "lib/battle/base_entity"
+require "lib/battle/entity/base_entity"
 
 module Battle
   class Tower < BaseEntity
@@ -28,6 +28,12 @@ module Battle
 
     def processable?(d_time)
       false
+    end
+
+    def decrease_health_points(value)
+      puts("VIOLATE HP!! #{value}") if value < 0.0
+      force_sync!
+      @health_points -= value
     end
 
   end

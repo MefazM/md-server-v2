@@ -1,6 +1,10 @@
 require 'lib/battle/opponent'
 require 'lib/battle/broadcast_actions'
 require 'lib/battle/calculate_battle_results'
+require 'lib/battle/spells/spells'
+# require 'lib/battle/affect_attrs'
+# include AffectAttrs
+
 
 module Battle
   class Director
@@ -24,8 +28,8 @@ module Battle
 
       ids = @opponents.keys
       @opponents_inverted = {
-        ids[0] => ids[1],
-        ids[1] => ids[0]
+        ids[0] => @opponents[ids[1]],
+        ids[1] => @opponents[ids[0]]
       }
 
       @status = :pending
@@ -34,33 +38,55 @@ module Battle
 
       TheLogger.info("Initialize battle on clients...")
 
-      @broadcast.send_create_new_battle({
+      battle_data = {
+        ids[0] => @opponents[ids[0]].battle_data,
+        ids[1] => @opponents[ids[1]].battle_data
+      }
+
+      @opponents.each_value do |opponent|
+
+        opponent.proxy.send_create_new_battle(battle_data)
+      end
+
+      @spells = []
+    end
+
+    def restore_opponent(player_uid)
+      player = @opponents[player_uid]
+
+      ids = @opponents.keys
+      player.proxy.send_create_new_battle({
         ids[0] => @opponents[ids[0]].battle_data,
         ids[1] => @opponents[ids[1]].battle_data
       })
+
+      @opponents.each do |player_uid, opponent|
+        opponent.pathway.each do |unit|
+          unit.force_sync!
+          player.proxy.send_spawn_unit([unit.uid, unit.name, player_uid])
+        end
+      end
+
+      player.proxy.send_start_battle
     end
 
-    def cast_spell(player_uid, target, spell_data)
-      # spell = SpellFactory.create(spell_data, player_uid)
-      # return nil if spell.nil?
+    def cast_spell(player_uid, data)
+      target = data[:target]
+      spell_name = data[:name]
+      handler = Spells[spell_name]
 
-      # # spell.channel = @channel
+      @spells << if handler.friendly_targets?
 
-      # area = spell_data[:area]
-      # life_time = spell.life_time * 1000
+        handler.new(@opponents[player_uid], target, player_uid, @broadcast)
+      else
 
-      # # publish(@channel, [:send_spell_cast, spell_data[:uid], life_time, target, player_uid, area])
+        handler.new(@opponents_inverted[player_uid], 1.0 - target, player_uid, @broadcast)
+      end
 
-      # if spell.friendly_targets?
-      #   spell.set_target(target, @opponents[player_uid].path_ways)
-      # else
-      #   target = 1.0 - target
+      @opponents.each_value do |opponent|
 
-      #   opponent_uid = @opponents_inverted[player_uid]
-      #   spell.set_target(target, @opponents[opponent_uid].path_ways)
-      # end
-
-      # @spells << spell
+        opponent.proxy.send_spell_cast([spell_name, target, player_uid])
+      end
     end
     # After initialization battle on clients.
     # Battle starts after all opponents are ready.
@@ -71,10 +97,7 @@ module Battle
       @opponents[player_uid].ready!
       # Autostart battle
       # Battle ready to start, if each opponent is ready.
-      all_ready = @opponents.values.all? {|opponent| opponent.ready?}
-      if all_ready
-        start!
-      end
+      start! if @opponents.values.all? {|opponent| opponent.ready?}
     end
 
     # ==================================================
@@ -89,17 +112,33 @@ module Battle
         spawn_default_units
       end
 
+      @spells.delete_if do |spell|
+
+        spell.process
+
+        if spell.complited?
+
+          if spell.achievementable?
+
+            Reactor.actor(spell.owner_uid).send_notification(:circle_fire, 10)
+          end
+
+          true
+        else
+
+          false
+        end
+      end
+
       current_time = Time.now.to_f
       # World update
       iteration_delta = current_time - prev_iteration_time
-      # update_spells(current_time, iteration_delta)
+
       sync_data = []
 
       @opponents.each do |player_id, player|
-        opponent_uid = @opponents_inverted[player_id]
-        opponent = @opponents[opponent_uid]
 
-        sync_data += player.update(opponent, iteration_delta)
+        sync_data += player.update(@opponents_inverted[player_id], iteration_delta)
 
         if player.lose?
           finish_battle(player_id)
@@ -107,34 +146,26 @@ module Battle
         end
       end
 
-      @broadcast.send_sync_battle(sync_data) unless sync_data.empty?
+      unless sync_data.empty?
+        @opponents.each_value do |opponent|
+
+          opponent.proxy.send_sync_battle(sync_data)
+        end
+      end
 
       after(:update, current_time, 0.1) if @status == :in_progress
     end
-    # Update spells
-    def update_spells(current_time, iteration_delta)
-      # @spells.each do |spell|
 
-      #   spell.update(current_time, iteration_delta)
-
-      #   if spell.completed
-
-      #     if spell.achievementable?
-      #       @opponents[spell.player_id].track_spell_statistics spell.uid
-
-      #       notificate_player_achievement!(spell.player_id, spell.uid, spell.killed_units)
-      #     end
-
-      #     @spells.delete spell
-      #   end
-
-      # end
-    end
     # Additional units spawning.
     def spawn_unit(player_id, unit_name)
-      unit = @opponents[player_id].add_unit_to_pool(unit_name.to_sym)
+      spawn_data = @opponents[player_id].add_unit_to_pool(unit_name.to_sym)
 
-      @broadcast.send_spawn_unit(unit) unless unit.nil?
+      unless spawn_data.nil?
+        @opponents.each_value do |opponent|
+
+          opponent.proxy.send_spawn_unit(spawn_data)
+        end
+      end
     end
     # Destroy battle director
     def destroy
@@ -148,7 +179,8 @@ module Battle
       @status = :in_progress
       @start_time = Time.now.to_i
       @next_wave_time = Time.now.to_i + DEFAULT_UNITS_SPAWN_TIME
-      @broadcast.send_start_battle
+
+      @opponents.each_value {|opponent| opponent.proxy.send_start_battle}
 
       after(:update, Time.now.to_f, 0.2)
 
@@ -170,17 +202,19 @@ module Battle
       ids = @opponents.keys
       data = {
         battle_time: Time.now.to_i - @start_time,
-        winner_id: @opponents_inverted[loser_id],
+        winner_id: @opponents_inverted[loser_id].uid,
         loser_id: loser_id,
         ids[0] => calculate_battle_reward(ids[0], ids[0] != loser_id),
         ids[1] => calculate_battle_reward(ids[1], ids[1] != loser_id)
       }
 
-      @broadcast.sync_after_battle(data)
-      @opponents_inverted.each{|uid| Lobby.unfreeze!(uid)}
+      @opponents.each_value do |opponent|
+
+        opponent.proxy.sync_after_battle(data)
+      end
+
+      @opponents.keys.each{|uid| Lobby.unfreeze!(uid)}
     end
-
-
 
   end
 end

@@ -28,7 +28,7 @@ module Battle
         units_killed_score: units_score,
         is_winner: is_winner,
         static_win: static_level_reward,
-        opponent_name: @opponents[@opponents_inverted[player_id]].username,
+        opponent_name: @opponents_inverted[player_id].username,
         modifier: score_modifier,
         spells: spells_statistics,
         score: battle_score.to_i,
@@ -51,7 +51,7 @@ module Battle
     end
 
     def calculate_score_modifier(statistics, player_id)
-      opponent = @opponents[@opponents_inverted[player_id]]
+      opponent = @opponents_inverted[player_id]
       opponent_level = opponent.statistics[:level]
       opponent_level = opponent_level.zero? ? 1 : opponent_level
 

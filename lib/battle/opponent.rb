@@ -1,10 +1,11 @@
-require 'lib/battle/tower'
-require 'lib/battle/unit'
+require 'lib/battle/entity/tower'
+require 'lib/battle/entity/unit'
+require 'lib/battle/send_proxy'
 
 module Battle
   class Opponent
 
-    attr_reader :username, :statistics, :tower, :pathway
+    attr_reader :username, :statistics, :tower, :pathway, :uid, :proxy
 
     def initialize(data)
       @uid = data[:uid]
@@ -26,6 +27,8 @@ module Battle
       }
 
       @chached_targets = {}
+
+      @proxy = SendProxy.new(@uid)
     end
 
     def battle_data
@@ -78,6 +81,15 @@ module Battle
 
     def sort_units!
       @pathway.sort_by! {|v| v.position}.reverse!
+    end
+
+    def select(left, right)
+      @pathway.each do |unit|
+
+        next if unit == @tower
+
+        yield unit if unit.position.between?(left, right)
+      end
     end
 
     def get_target(attaker, opponent_units)

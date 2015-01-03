@@ -30,9 +30,9 @@ module Battle
 
   class << self
 
-    def create_battle(opponent_1_uid, opponent_2_uid)
+    @@battles = ThreadSafe::Cache.new
 
-      @battles ||= ThreadSafe::Cache.new
+    def create_battle(opponent_1_uid, opponent_2_uid)
 
       opponents = [opponent_1_uid, opponent_2_uid].map do |uid|
         Reactor.actor(uid).battle_snapshot
@@ -40,21 +40,20 @@ module Battle
 
       director = Director.new(*opponents)
 
-      @battles[opponent_1_uid] = director
-      @battles[opponent_2_uid] = director
+      @@battles[opponent_1_uid] = director
+      @@battles[opponent_2_uid] = director
     end
 
     def [](player_uid)
-      if @battles.nil? || @battles[player_uid].nil?
+      if @@battles[player_uid].nil?
         TheLogger.error("Can't find battle for player #{player_uid}")
         return nil
       end
 
-      @battles[player_uid]
+      @@battles[player_uid]
     end
 
     def create_ai_battle(player_uid)
-      @battles ||= ThreadSafe::Cache.new
 
       ai = {
         uid: 'ai',
@@ -65,11 +64,15 @@ module Battle
 
       director = DirectorAi.new(Reactor.actor(player_uid).battle_snapshot, ai)
 
-      @battles[player_uid] = director
+      @@battles[player_uid] = director
+    end
+
+    def exists?(player_uid)
+      @@battles.key?(player_uid)
     end
 
     def method_missing(method, *args, &block)
-      @battles[args[0]].method(method).call(*args) if @battles[args[0]]
+      @@battles[args[0]].method(method).call(*args) if @@battles[args[0]]
     end
 
   end

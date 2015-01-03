@@ -1,9 +1,12 @@
 #!!!!!проверять цель до перемещения
-# require "lib/battle/unit_spells_effect"
+require "lib/battle/entity/spells/spells_affect"
+
 
 module Battle
   class BaseEntity
-    # include UnitSpellsEffect
+
+    include SpellsAffect
+
     MOVE = 1
     DEAD = 3
     ATTACK = 6
@@ -11,7 +14,7 @@ module Battle
 
     MAX_POSITION = 0.9
 
-    attr_reader :uid, :position, :name
+    attr_reader :uid, :name, :position
 
     def initialize(unit_uid, position = 0.0)
       @name = unit_uid.to_sym
@@ -26,6 +29,8 @@ module Battle
       @time_penalty = 0.0
 
       build_entity
+
+      @frozen = false
     end
 
     def force_sync!
@@ -33,7 +38,7 @@ module Battle
     end
 
     def dead?
-      @health_points < 0.0
+      @health_points <= 0.0
     end
 
     def low_hp?(scale)
@@ -43,17 +48,6 @@ module Battle
     def sync_data
       @force_sync = false
       [@uid, @health_points, @state]
-    end
-
-    def decrease_health_points(value)
-      puts("VIOLATE HP!! #{value}") if value < 0.0
-      @health_points -= value
-      force_sync!
-    end
-
-    def increase_health_points(value)
-      @health_points = [@unit_prototype[:health_points], @health_points + value].min
-      force_sync!
     end
 
     def can_move?
@@ -70,8 +64,9 @@ module Battle
     end
 
     def processable?(d_time)
+      process_spells
 
-      if @health_points < 0.0
+      if @health_points <= 0.0
         set_state(DEAD)
 
         return false
@@ -79,7 +74,14 @@ module Battle
 
       return false if (@time_penalty -= d_time) > 0.0
 
+      return false if @frozen
+
       true
+    end
+
+    def set_freeze(value)
+      @frozen = value
+      set_state(IDLE) if value
     end
 
     private

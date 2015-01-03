@@ -23,18 +23,10 @@ module Player
       compute!(level, :income_at_battle)
     end
 
-    def to_hash
-      {
-        amount: @coins_storage_amount,
-        capacity: @capacity
-      }
-    end
-
-    def decreasre(value)
-      # compute_mana_storage
+    def decrease(value)
       if @mana_storage_amount >= value
         @mana_storage_amount -= value
-        # send_sync_mana_storage
+
         return true
       end
 
@@ -46,6 +38,9 @@ module Player
     end
 
     def to_hash
+
+      puts("#{@capacity} #{@income} #{@mana_storage_amount}")
+
       {
         capacity: @capacity,
         income: @income,
@@ -66,9 +61,8 @@ module Player
       @income = settings[income_type]
       @mana_storage_amount += d_time * @income
 
-      max_capacity = @capacity
-      if @mana_storage_amount >= max_capacity
-        @mana_storage_amount = max_capacity
+      if @mana_storage_amount >= @capacity
+        @mana_storage_amount = @capacity
       end
     end
 

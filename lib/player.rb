@@ -40,16 +40,6 @@ module Player
     authorise!(login_data)
 
     restore_player
-
-    send_authorised
-    send_game_data
-
-    sync_units
-    sync_coins
-    sync_score
-    sync_mana
-
-    start_game_scene(:world)
   end
 
   def uid
@@ -146,9 +136,6 @@ module Player
   end
 
   def invite_opponent_to_battle(data)
-
-    puts(data.inspect)
-
     if data[:ai]
       Battle.create_ai_battle(uid)
     else
@@ -165,7 +152,19 @@ module Player
   end
 
   def cast_spell(data)
-    puts('cast_spell')
+    prototype = Storage::GameData.spell_data(data[:name])
+
+    @mana_storage.compute_at_battle!(@buildings.coins_mine_level)
+
+    if prototype && @mana_storage.decrease(prototype[:mana_cost])
+      Battle.cast_spell(uid, data)
+    else
+      TheLogger.error("Can'p perform spell - #{data[:name]}!")
+
+      send_notification(:low_mana)
+    end
+
+    sync_mana
   end
 
   def spawn_unit(unit_uid)
@@ -209,21 +208,42 @@ module Player
     @buildings = Buildings.new(@player_id)
     @buildings.restore_queue.each{|task| after(:building_update_ready, *task) }
 
+    send_authorised
+    send_game_data
+
+    @units = Units.new(@player_id)
+    @units.restore_queue.each{|task| after(:unit_production_ready, *task) }
+
+    sync_units
+
     @coins_storage = CoinsStorage.new(@player_id)
     @coins_storage.compute!(@buildings.coins_storage_level)
 
     @coins_mine = CoinsMine.new(@player_id)
     @coins_mine.compute!(@buildings.coins_mine_level)
 
+    sync_coins
+
     @score = Score.new(@player_id)
 
+    sync_score
+
     @mana_storage = ManaStorage.new(@player_id)
-    @mana_storage.compute_at_shard!(@score.current_level)
 
-    @units = Units.new(@player_id)
-    @units.restore_queue.each{|task| after(:unit_production_ready, *task) }
+    if Battle.exists?(uid)
+      @mana_storage.compute_at_battle!(@score.current_level)
+      sync_mana
 
-    register_in_lobby
+      Battle.restore_opponent(uid)
+    else
+      @mana_storage.compute_at_shard!(@score.current_level)
+      sync_mana
+
+      register_in_lobby
+
+      start_game_scene(:world)
+    end
+
     # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
   end
 

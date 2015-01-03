@@ -20,8 +20,8 @@ module Battle
 
       ids = @opponents.keys
       @opponents_inverted = {
-        ids[0] => ids[1],
-        ids[1] => ids[0]
+        ids[0] => @opponents[ids[1]],
+        ids[1] => @opponents[ids[0]]
       }
 
       @status = :pending
@@ -32,6 +32,8 @@ module Battle
         ids[0] => @opponents[ids[0]].battle_data,
         ids[1] => @opponents[ids[1]].battle_data
       })
+
+      @spells = []
     end
 
     def set_opponent_ready(player_uid)

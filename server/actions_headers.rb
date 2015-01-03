@@ -46,4 +46,6 @@ module Send
   START_BATTLE = :stb
   FINISH_BATTLE = :fshb
   SYNC_BATTLE = :syb
+
+  SPELL_ICONS = :asi
 end

@@ -1,6 +1,8 @@
 require 'yaml'
 require 'lib/recursive_symbolize_keys'
 
+
+# require 'prototypes/spell_prototype'
 #TODO: rename storage_building_uid to coins_storage_building_uid
 
 module Storage
@@ -169,7 +171,7 @@ module Storage
           [:uid, :name, :description, :health_points,
            :movement_speed, :production_time,
            :price, :score_price, :depends_on_building_level,
-           :attack_speed, :attack_power_min, :attack_power_max,
+           :attack_speed, :attack_power,
            :attack_range, :blockable_by, :distance_attack].each do |attr|
 
             data[attr] = unit[attr]
@@ -266,6 +268,11 @@ module Storage
             description: spell_data[:description],
             name: spell_data[:name],
             spellbook_timing: spell_data[:spellbook_timing],
+            slot_a: spell_data[:slot_a],
+            slot_b: spell_data[:slot_b],
+            slot_c: spell_data[:slot_c],
+            slot_d: spell_data[:slot_d],
+
             # client_description: spell_data[:client_description]
           }
 
@@ -282,14 +289,6 @@ module Storage
             right: client_description_right.join("\n"),
             left: client_description_left.join("\n")
           }
-
-          # Get spel attrs
-          mysql_connection.select("SELECT * FROM spells_attrs WHERE spell_id = #{spell_data[:id]}").each do |spell_attrs|
-            key = spell_attrs[:key]
-            value = spell_attrs[:value]
-
-            spell_prototype[key.to_sym] = value
-          end
 
           @spells_data[uid] = spell_prototype
         end

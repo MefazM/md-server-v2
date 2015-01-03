@@ -3,13 +3,11 @@ require 'server/actions_headers'
 module Player
   module SendActions
 
-    # private
-
     def send_notification(notification_uid, payload = nil)
-      message = [Send::NOTIFICATION, notification_uid]
-      message << payload unless payload.nil?
+      data = [notification_uid]
+      data << payload unless payload.nil?
 
-      send_data(message)
+      send_data([Send::NOTIFICATION, data])
     end
 
     def send_authorised
@@ -89,9 +87,6 @@ module Player
       send_data([Send::CANCEL_INVITE])
     end
 
-
-
-
     def send_create_new_battle(data)
       send_data([Send::CREATE_NEW_BATTLE, data])
     end
@@ -114,6 +109,14 @@ module Player
 
     def send_sync_battle(data)
       send_data([Send::SYNC_BATTLE, data])
+    end
+
+    def send_spell_cast(data)
+      send_data([Send::CAST_SPELL, data])
+    end
+
+    def send_spell_icons(data)
+      send_data([Send::SPELL_ICONS, data])
     end
 
   end
