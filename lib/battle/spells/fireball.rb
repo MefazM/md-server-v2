@@ -1,20 +1,24 @@
 module Battle
   class Fireball < AbstractSpell
 
-    def initialize(player, target, owner_uid, broadcast)
+    def initialize(source, target, data)
       super
-
-      @prototype = Storage::GameData.spell_data(:circle_fire)
 
       @units_to_kill = Storage::GameData.battle_score_settings[:circle_fire][:units_to_kill]
       @killed_units = 0
 
-      target_bounds!(@prototype[:area])
       build_instant!
+
+      send_view
+    end
+
+    def achieve!
+      @source.proxy.send_notification(@spell_name, @killed_units)
+      @source.track_spell_statistics(@spell_name)
     end
 
     def affect!
-      @player.select(*@target_bounds) do |unit|
+      @target.select(*@target_bounds) do |unit|
 
         unit.decrease_health_points(@prototype[:slot_a].to_f)
 

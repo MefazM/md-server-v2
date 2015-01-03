@@ -21,7 +21,7 @@ require 'lib/battle/spells/poison_cloud.rb'
 
 module Battle
 
-  module Spells
+  class SpellsFactory
     # Ugly mapping
     @@spells = {
       circle_fire: Fireball,
@@ -42,40 +42,40 @@ module Battle
       rect_water: Stun,
     }
 
-    # def initialize(players, broadcast)
-    #   @players = players
-    #   @broadcast = broadcast
-    #   @spells = []
-    # end
+    def initialize(opponents)
+      @opponents = opponents
+      @spells = []
 
-    def self.[](spell_name)
-      @@spells[spell_name.to_sym]
+      ids = @opponents.keys
+      @opponents_inverted = {
+        ids[0] => @opponents[ids[1]],
+        ids[1] => @opponents[ids[0]]
+      }
     end
 
-    # def create(player_uid, data)
+    def create(player_uid, data)
 
-    #   handler = @@spells[data[:name].to_sym]
+      handler = @@spells[data[:name].to_sym]
 
-    #   if handler.nil?
+      target_opponent = handler.friendly_targets? ? @opponents[player_uid] : @opponents_inverted[player_uid]
 
-    #     TheLogger.error("Can'p perform spell - #{data[:name]}!")
-    #   else
+      @spells << handler.new(@opponents[player_uid], target_opponent, data)
+    end
 
-    #     uid = handler.friendly_targets? ? player_uid : @opponents_inverted[player_uid]
+    def update
+      @spells.delete_if do |spell|
 
-    #     @spells << handler.new(@players[uid], @broadcast, data[:target], player_uid)
-    #     # @broadcast.send_spell_cast([data[:name].to_sym, data[:target], player_uid])
-    #   end
-    # end
+        spell.process
 
-    # def process(d_time)
-    #   @spells.delete_if do |spell|
+        spell.complited?
+      end
+    end
 
-    #     spell.process
-
-    #     spell.complited?
-    #   end
-    # end
+    def clear!
+      @opponents_inverted = nil
+      @opponents = nil
+      @spells = nil
+    end
 
   end
 end

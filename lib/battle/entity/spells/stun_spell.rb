@@ -12,7 +12,6 @@ module Battle
     end
 
     def ready?(time)
-      puts("#{@finish_at} #{time}")
       @complited = @finish_at < time
     end
 

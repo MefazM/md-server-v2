@@ -14,7 +14,7 @@ module Battle
           actor.method(method).call
         else
 
-          actor.method(method).call(args[0])
+          actor.method(method).call(*args)
         end
       end
     end

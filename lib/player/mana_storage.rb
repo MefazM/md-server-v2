@@ -38,9 +38,6 @@ module Player
     end
 
     def to_hash
-
-      puts("#{@capacity} #{@income} #{@mana_storage_amount}")
-
       {
         capacity: @capacity,
         income: @income,

@@ -1,17 +1,16 @@
 module Battle
   class Slow < AbstractSpell
 
-    def initialize(player, target, owner_uid, broadcast)
+    def initialize(source, target, position)
       super
 
-      @prototype = Storage::GameData.spell_data(:arrow_water)
-
-      target_bounds!(@prototype[:area])
       build_instant!
+
+      send_view
     end
 
     def affect!
-      @player.select(*@target_bounds) do |unit|
+      @target.select(*@target_bounds) do |unit|
 
         value = unit.opt_value(:movement_speed, @prototype[:slot_a])
         unit.affect(:slow, EffectSwitchSpell.new(:movement_speed, value, @prototype[:time], true))

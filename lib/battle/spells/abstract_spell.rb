@@ -3,13 +3,21 @@ module Battle
 
     attr_reader :owner_uid
 
-    def initialize(player, target, owner_uid, broadcast)
-      @player = player
-      @target = target
-      @owner_uid = owner_uid
-      @broadcast = broadcast
+    def initialize(source, target, data)
+      @source, @target = source, target
+      @position, @spell_name = data[:target], data[:name].to_sym
 
       @complited = false
+
+      @prototype = Storage::GameData.spell_data(@spell_name)
+
+      @target_bounds = calculate_target_bounds
+    end
+
+    def calculate_target_bounds
+      target = self.class.friendly_targets? ? @position : 1.0 - @position
+
+      [target - @prototype[:area] * 0.5, target + @prototype[:area] * 0.5]
     end
 
     def process
@@ -36,17 +44,17 @@ module Battle
     end
 
     def affect!
-      puts('PIU!!!!!')
-    end
-
-    def target_bounds!(area)
-      @target_bounds = [@target - area * 0.5, @target + area * 0.5]
+      raise 'Not implemented!'
     end
 
     def finalize_spell!
-      @player = nil
+
+      achieve! if achievementable?
+
+      @source = nil
+      @target = nil
+
       @complited = true
-      @broadcast = nil
     end
 
     def complited?
@@ -55,6 +63,10 @@ module Battle
 
     def achievementable?
       false
+    end
+
+    def achieve!
+      raise 'Not implemented!'
     end
 
     def build_instant!
@@ -73,6 +85,20 @@ module Battle
       @charge_time = Time.now.to_f
 
       @stack = [:affect, :wait_charge] * num_charges
+    end
+
+    def send_view
+      [@source, @target].each do |opponent|
+
+        opponent.proxy.send_spell_cast([@spell_name, @position, opponent.uid])
+      end
+    end
+
+    def send_spell_icons(affected_units)
+      [@source, @target].each do |opponent|
+
+        opponent.proxy.send_spell_icons([@spell_name, @prototype[:spellbook_timing], affected_units])
+      end
     end
 
     def self.friendly_targets?

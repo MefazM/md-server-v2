@@ -1,17 +1,18 @@
 module Battle
   class Thunder < AbstractSpell
 
-    def initialize(player, target, owner_uid, broadcast)
+    def initialize(source, target, position)
       super
 
       @prototype = Storage::GameData.spell_data(:z_air)
 
-      target_bounds!(@prototype[:area])
       build_over_time!(@prototype[:time], @prototype[:slot_a])
+
+      send_view
     end
 
     def affect!
-      @player.select(*@target_bounds) do |unit|
+      @target.select(*@target_bounds) do |unit|
 
         unit.decrease_health_points(@prototype[:slot_b])
       end
