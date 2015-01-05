@@ -31,8 +31,6 @@ module Battle
 
       @status = :pending
 
-      # @broadcast = BroadcastActions.new(opponent_1[:uid], opponent_2[:uid])
-
       TheLogger.info("Initialize battle on clients...")
 
       battle_data = {
@@ -149,8 +147,8 @@ module Battle
 
     def spawn_default_units
       @opponents.each_key{|player_id|
-        spawn_unit(player_id, ['adept', 'scout', 'spearman', 'crusader'].sample)
-        # spawn_unit(player_id, 'crusader')
+        # spawn_unit(player_id, ['adept', 'scout', 'spearman', 'crusader'].sample)
+        spawn_unit(player_id, 'crusader')
       }
     end
 

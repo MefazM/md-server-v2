@@ -160,23 +160,18 @@ module Battle
     end
 
     def add_unit_to_pool(name)
-      unit = Unit.new(name)
-      @pathway << unit
+      units_available = @statistics[:units][:available][name] || 0
 
-      return [unit.uid, name, @uid]
+      if units_available > 0
+        @statistics[:units][:available][name] -= 1
 
-      # units_available = @statistics[:units][:available][name] || 0
+        unit = Unit.new(name)
+        @pathway << unit
 
-      # if units_available > 0
-      #   @statistics[:units][:available][name] -= 1
+        return [unit.uid, name, @uid]
+      end
 
-      #   unit = Unit.new(name, rand(0..PATH_COUNT-1))
-      #   @path_ways[unit.path_id] << unit
-
-      #   return [unit.uid, name, @uid, unit.path_id]
-      # end
-
-      # nil
+      nil
     end
 
     def destroy!

@@ -134,7 +134,7 @@ module Player
   end
 
   def generate_lobby
-    players = Lobby.players(player_rate).delete_if{|player| player[0] == uid }
+    players = Lobby.players(player_rate).delete_if{|player| player[:uid] == uid }
     send_lobby_data(players, AiGenerator.generate_all(@score.current_level))
   end
 
