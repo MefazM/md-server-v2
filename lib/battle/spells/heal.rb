@@ -1,7 +1,7 @@
 module Battle
   class Heal < AbstractSpell
 
-    def initialize(source, target, position)
+    def initialize(opponents, caster_uid, target_uid, options)
       super
 
       build_instant!

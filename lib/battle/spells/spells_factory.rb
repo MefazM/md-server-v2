@@ -53,13 +53,13 @@ module Battle
       }
     end
 
-    def create(player_uid, data)
+    def create(caster_uid, options)
 
-      handler = @@spells[data[:name].to_sym]
+      handler = @@spells[options[:name].to_sym]
 
-      target_opponent = handler.friendly_targets? ? @opponents[player_uid] : @opponents_inverted[player_uid]
+      target_uid = handler.friendly_targets? ? caster_uid : @opponents_inverted[caster_uid].uid
 
-      @spells << handler.new(@opponents[player_uid], target_opponent, data)
+      @spells << handler.new(@opponents, caster_uid, target_uid, options)
     end
 
     def update

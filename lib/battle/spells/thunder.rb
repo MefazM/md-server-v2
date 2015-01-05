@@ -1,7 +1,7 @@
 module Battle
   class Thunder < AbstractSpell
 
-    def initialize(source, target, position)
+    def initialize(opponents, caster_uid, target_uid, options)
       super
 
       @prototype = Storage::GameData.spell_data(:z_air)

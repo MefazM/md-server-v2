@@ -3,14 +3,13 @@ module Battle
 
     attr_reader :owner_uid
 
-    def initialize(source, target, data)
-      @source, @target = source, target
-      @position, @spell_name = data[:target], data[:name].to_sym
+    def initialize(opponents, caster_uid, target_uid, options)
+      @opponents = opponents
+      @source, @target = opponents[caster_uid], opponents[target_uid]
 
+      @position, @spell_name = options[:target], options[:name].to_sym
       @complited = false
-
       @prototype = Storage::GameData.spell_data(@spell_name)
-
       @target_bounds = calculate_target_bounds
     end
 
@@ -88,14 +87,14 @@ module Battle
     end
 
     def send_view
-      [@source, @target].each do |opponent|
+      @opponents.each_value do |opponent|
 
         opponent.proxy.send_spell_cast([@spell_name, @position, @source.uid])
       end
     end
 
-    def send_spell_icons(affeсted_units)
-      [@source, @target].each do |opponent|
+    def send_spell_icons(affected_units)
+      @opponents.each_value do |opponent|
 
         opponent.proxy.send_spell_icons([@spell_name, @prototype[:spellbook_timing], affected_units])
       end

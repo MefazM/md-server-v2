@@ -5,7 +5,7 @@ module Battle
     # slot_b - hp decrease
     # slot_c - slow value
 
-    def initialize(source, target, position)
+    def initialize(opponents, caster_uid, target_uid, options)
       super
 
       build_over_time!(@prototype[:time], @prototype[:slot_a])

@@ -24,16 +24,16 @@ module Battle
 
       start!
 
-      after(:ai_update, nil, 1)
+      after(:ai_update, nil, @ai_settings[:activity_period])
     end
 
-    AI_ACTIONS = [:ai_heal, :ai_buff] #:ai_spawn_unit
+    AI_ACTIONS = [:ai_heal, :ai_buff, :ai_debuff, :ai_atk_spell, :ai_spawn_unit]
 
     def ai_update
       if @status == :in_progress
 
         method(AI_ACTIONS.sample).call
-        after(:ai_update, nil, 1)
+        after(:ai_update, nil, @ai_settings[:activity_period])
       end
     end
 

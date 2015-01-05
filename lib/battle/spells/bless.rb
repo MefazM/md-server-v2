@@ -3,7 +3,7 @@ module Battle
 
     # slot_a
 
-    def initialize(source, target, position)
+    def initialize(opponents, caster_uid, target_uid, options)
       super
 
       build_instant!

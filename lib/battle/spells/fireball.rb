@@ -1,7 +1,7 @@
 module Battle
   class Fireball < AbstractSpell
 
-    def initialize(source, target, data)
+    def initialize(opponents, caster_uid, target_uid, options)
       super
 
       @units_to_kill = Storage::GameData.battle_score_settings[:circle_fire][:units_to_kill]
