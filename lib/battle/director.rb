@@ -6,7 +6,7 @@ require 'lib/battle/spells/spells_factory'
 module Battle
   class Director
 
-    DEFAULT_UNITS_SPAWN_TIME = 3.5
+    DEFAULT_UNITS_SPAWN_TIME = 1.0
 
     include Reactor::React
     include CalculateBattleResults
@@ -89,7 +89,6 @@ module Battle
     # 2. Calculating outer effects (user spells, ...)
     # 3. Default units spawn.
     def update(prev_iteration_time)
-
       if @next_wave_time < Time.now.to_i
         @next_wave_time = Time.now.to_i + DEFAULT_UNITS_SPAWN_TIME
         spawn_default_units

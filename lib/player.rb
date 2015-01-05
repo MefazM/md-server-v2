@@ -10,6 +10,7 @@ require 'lib/player/requests_dispatcher'
 require 'lib/player/send_actions'
 require 'lib/battle/battle'
 require 'lib/player/lobby'
+require 'lib/ai_generator'
 
 module Player
   SAVE_TO_REDIS_INTERVAL = 5
@@ -29,7 +30,9 @@ module Player
   map_requests Receive::CONSTUCT_UNIT, as: :construct_unit, authorized: true
   map_requests Receive::UPDATE_LOBBY_DATA, as: :generate_lobby, authorized: true
 
+
   map_requests Receive::INVITE_OPPONENT_TO_BATTLE, as: :invite_opponent_to_battle, authorized: true
+  map_requests Receive::CREATE_AI_BATTLE, as: :create_ai_battle, authorized: true
   map_requests Receive::RESPONSE_INVITATION_TO_BATTLE, as: :response_invitation_to_battle, authorized: true
 
   map_requests Receive::READY_TO_BATTLE, as: :ready_to_battle, authorized: true
@@ -132,15 +135,17 @@ module Player
 
   def generate_lobby
     players = Lobby.players(player_rate).delete_if{|player| player[0] == uid }
-    send_lobby_data(players, Lobby.generate_ai(@score.current_level))
+    send_lobby_data(players, AiGenerator.generate_all(@score.current_level))
   end
 
-  def invite_opponent_to_battle(data)
-    if data[:ai]
-      Battle.create_ai_battle(uid)
-    else
-      invite_to_battle(data[:uid])
-    end
+  def create_ai_battle(ai_type)
+    ai_data = AiGenerator.generate(ai_type, @score.current_level)
+
+    Battle.create_ai_battle(battle_snapshot, ai_data)
+  end
+
+  def invite_opponent_to_battle(opponent_uid)
+    Lobby.create_invite(uid, opponent_uid)
   end
 
   def response_invitation_to_battle(data)

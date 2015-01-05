@@ -17,6 +17,8 @@ module Receive
   READY_TO_BATTLE = :rtb
   CAST_SPELL = :cs
   SPAWN_UNIT = :spu
+
+  CREATE_AI_BATTLE = :cab
 end
 #RESPONSE
 module Send

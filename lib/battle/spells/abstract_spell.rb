@@ -90,11 +90,11 @@ module Battle
     def send_view
       [@source, @target].each do |opponent|
 
-        opponent.proxy.send_spell_cast([@spell_name, @position, opponent.uid])
+        opponent.proxy.send_spell_cast([@spell_name, @position, @source.uid])
       end
     end
 
-    def send_spell_icons(affected_units)
+    def send_spell_icons(affeсted_units)
       [@source, @target].each do |opponent|
 
         opponent.proxy.send_spell_icons([@spell_name, @prototype[:spellbook_timing], affected_units])

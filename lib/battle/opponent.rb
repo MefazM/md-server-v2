@@ -40,35 +40,35 @@ module Battle
     end
 
     def units_at_front(segment_length = 15)
-    #   positions = {}
-    #   @path_ways.flatten.each do |unit|
+      positions = {}
 
-    #     segment = ((unit.position / segment_length) * 100).to_i
-    #     key = ['k', 'segment'].join
+      @pathway.each do |unit|
+        segment_index = ((unit.position / segment_length) * 100).to_i
+        segment_name = ['k', segment_index].join
 
-    #     positions[key] ||= {
-    #       :count => 0,
-    #       :pos => 0.0
-    #     }
+        positions[segment_name] ||= {
+          :count => 0,
+          :pos => 0.0
+        }
 
-    #     if block_given?
-    #       if yield(unit)
-    #         positions[key][:count] += 1
-    #         positions[key][:pos] += unit.position
-    #       end
-    #     else
-    #       positions[key][:count] += 1
-    #       positions[key][:pos] += unit.position
-    #     end
-    #   end
+        if block_given?
+          if yield(unit)
+            positions[segment_name][:count] += 1
+            positions[segment_name][:pos] += unit.position
+          end
+        else
+          positions[segment_name][:count] += 1
+          positions[segment_name][:pos] += unit.position
+        end
+      end
 
-    #   matched, matches = positions.max_by{|_,u| u[:count]}
+      matched, matches = positions.max_by{|_,u| u[:count]}
 
-    #   return nil if matched.nil?
+      return nil if matched.nil?
 
-    #   avg_pos = matches[:pos] / matches[:count].to_f
+      avg_pos = matches[:pos] / matches[:count].to_f
 
-    #   return avg_pos, matches[:count]
+      return avg_pos, matches[:count]
     end
 
     def track_spell_statistics(uid)
@@ -85,7 +85,6 @@ module Battle
 
     def select(left, right)
       @pathway.each do |unit|
-
         next if unit == @tower
 
         yield unit if unit.position.between?(left, right)
@@ -93,11 +92,18 @@ module Battle
     end
 
     def get_target(attaker, opponent_units)
+
+      target = @chached_targets[attaker.uid]
+      unless target.nil? || target.dead?
+
+        return target
+      end
+
       opponent_units.find do |unit|
         if attaker.in_attack_range?(unit)
 
           count = @chached_targets.inject(0) do |c, (a, t)|
-            c += (t == unit.uid ? 1 : 0)
+            c += (t.uid == unit.uid ? 1 : 0)
           end
 
           count < unit.blockable_by
@@ -118,13 +124,14 @@ module Battle
         if unit.processable?(d_time)
           target = get_target(unit, opponent.pathway)
           if target
+
             unit.attack(target)
 
-            @chached_targets[unit.uid] = target.uid
+            @chached_targets[unit.uid] = target
           else
             unit.move(d_time) if unit.can_move?
 
-            @chached_targets[unit.uid] = nil
+            @chached_targets.delete(unit.uid)
           end
         end
 
@@ -135,7 +142,7 @@ module Battle
           @statistics[:units][:lost][unit.name] ||= 0
           @statistics[:units][:lost][unit.name] += 1
 
-          @chached_targets[unit.uid] = nil
+          @chached_targets.delete(unit.uid)
 
           @pathway.delete(unit)
         end

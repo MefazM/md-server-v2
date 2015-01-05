@@ -53,18 +53,8 @@ module Battle
       @@battles[player_uid]
     end
 
-    def create_ai_battle(player_uid)
-
-      ai = {
-        uid: 'ai',
-        units: {spearman: 250, adept: 20, slinger: 150, scout: 50, crusader: 99999999},
-        level: 2,
-        username: 'TEST AI'
-      }
-
-      director = DirectorAi.new(Reactor.actor(player_uid).battle_snapshot, ai)
-
-      @@battles[player_uid] = director
+    def create_ai_battle(player_data, ai_data)
+      @@battles[player_data[:uid]] = DirectorAi.new(player_data, ai_data)
     end
 
     def exists?(player_uid)
