@@ -146,6 +146,7 @@ module Lobby
 
         end
       else
+
         cancel_invitation(player_id, token)
       end
     end

@@ -13,7 +13,7 @@ require 'lib/player/lobby'
 require 'lib/ai_generator'
 
 module Player
-  SAVE_TO_REDIS_INTERVAL = 5
+  SAVE_TO_REDIS_INTERVAL = 20
 
   include Authorisation
   include RequestsDispatcher
@@ -67,7 +67,7 @@ module Player
   def save_player_timer
     save!
     # Run timer once more time
-    # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
+    after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
   end
 
   def construct_building(building_uid)
@@ -249,7 +249,7 @@ module Player
       start_game_scene(:world)
     end
 
-    # after(SAVE_TO_REDIS_INTERVAL, [:save_player_timer, nil])
+    after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
   end
 
   def player_rate
@@ -257,6 +257,9 @@ module Player
   end
 
   def save!
+
+    TheLogger.info("Save player: #{uid}...")
+
     @coins_storage.save!
     @coins_mine.save!
     @score.save!

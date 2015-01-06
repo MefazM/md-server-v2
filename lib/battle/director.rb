@@ -6,7 +6,7 @@ require 'lib/battle/spells/spells_factory'
 module Battle
   class Director
 
-    DEFAULT_UNITS_SPAWN_TIME = 1.0
+    DEFAULT_UNITS_SPAWN_TIME = 5.0
 
     include Reactor::React
     include CalculateBattleResults
@@ -170,7 +170,16 @@ module Battle
 
       broadcast {|proxy| proxy.sync_after_battle(data)}
 
-      @opponents.keys.each{|uid| Lobby.unfreeze!(uid)}
+      @opponents.each do |uid, opponent|
+        # opponent.destroy!
+        Lobby.unfreeze!(uid)
+      end
+
+      unlink_battle
+    end
+
+    def unlink_battle
+      @opponents.keys.each {|uid| Battle.unlink(uid)}
     end
 
   end

@@ -27,27 +27,27 @@ module Reactor
 
     attr_accessor :num_threads
 
+    @@linked_actors = ThreadSafe::Hash.new
+
     def configure
       yield self
     end
 
     def link(actor)
-      @linked_actors ||= ThreadSafe::Hash.new
-
-      unless @linked_actors[actor.uid].nil?
+      unless @@linked_actors[actor.uid].nil?
         TheLogger.info "Kill old actor #{actor.uid}"
-        @linked_actors[actor.uid].kill!
+        @@linked_actors[actor.uid].kill!
       end
 
-      @linked_actors[actor.uid] = actor
+      @@linked_actors[actor.uid] = actor
     end
 
     def actor(name)
-      @linked_actors[name]
+      @@linked_actors[name]
     end
 
     def actors(names)
-      @linked_actors.values_at(*names)
+      @@linked_actors.values_at(*names)
     end
 
     def worker

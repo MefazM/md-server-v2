@@ -103,5 +103,9 @@ module Battle
       spawn_unit(@ai_uid, @ai_settings[:units].keys.sample)
     end
 
+    def unlink_battle
+      Battle.unlink(@player_uid)
+    end
+
   end
 end

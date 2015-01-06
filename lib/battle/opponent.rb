@@ -19,7 +19,7 @@ module Battle
 
       @statistics = {
         units: {
-          available: data[:units],
+          available: data[:units].dup,
           lost: {}
         },
         spells: [],

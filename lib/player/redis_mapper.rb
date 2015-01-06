@@ -21,9 +21,8 @@ module Player
       attrs.each do |field_name|
         Storage.redis_pool.with do |conn|
           value = instance_variable_get("@#{field_name}")
-          value = yield(value) if block_given?
 
-          conn.hset(path, field_name, value)
+          conn.hset(path, field_name, block_given? ? yield(value) : value)
         end
       end
 

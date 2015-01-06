@@ -29,6 +29,7 @@ module Battle
     end
 
     def mutate
+      @charges_count -= 1
       yield(@attr_name, @value)
     end
 
