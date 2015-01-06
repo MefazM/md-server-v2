@@ -117,12 +117,12 @@ module Lobby
     end
 
     def process_invite(player_id, invite_info)
-      token, decision = invite_info
+      token, accepted = invite_info
 
-      if decision
+      if accepted
 
         invite = @invites[player_id].find{|i| i[:token] == token}
-        TheLogger.info("Player ##{player_id} accepted battle from #{invite[:sender_uid]}. Token = #{invite[:token]}")
+        TheLogger.info("Player ##{player_id} accept battle from #{invite[:sender_uid]}. Token = #{invite[:token]}")
 
         if invite
           freeze!(player_id)

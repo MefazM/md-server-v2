@@ -91,8 +91,7 @@ module Player
       uid = unit_data[:uid].to_sym
       @units[uid] = (@units[uid] || 0) + 1
 
-      count = group[:tasks].first[:count] -= 1
-      group[:tasks].shift if count < 1
+      group[:tasks].shift if (group[:tasks].first[:count] -= 1) < 1
 
       return nil unless group[:tasks].first
       group[:started_at] = Time.now.to_i

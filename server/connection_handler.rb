@@ -32,9 +32,16 @@ module Server
       @alive
     end
 
-    def send_data(data)
+    # def send_data(data)
+    #   EventMachine::next_tick {
+    #     super [MSG_START_TOKEN, data.to_json, MSG_END_TOKEN].join if @alive
+    #   }
+    # end
+
+
+    def send_all_data(data)
       EventMachine::next_tick {
-        super [MSG_START_TOKEN, data.to_json, MSG_END_TOKEN].join if @alive
+        send_data([MSG_START_TOKEN, data.to_json, MSG_END_TOKEN].join) if @alive
       }
     end
 
