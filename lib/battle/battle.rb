@@ -47,8 +47,8 @@ module Battle
       @@battles[player_data[:uid]] = DirectorAi.new(player_data, ai_data)
     end
 
-    def create_tutorial_battle(player_data)
-      @@battles[player_data[:uid]] = DirectorTutorial.new(player_data)
+    def create_tutorial_battle(player_uid)
+      @@battles[player_uid] = DirectorTutorial.new(player_uid)
     end
 
     def [](player_uid)

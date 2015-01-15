@@ -214,57 +214,40 @@ module Player
 
   def restore_player
     Reactor.link(self)
-
     @buildings = Buildings.new(@player_id)
     @buildings.restore_queue.each{|task| after(:building_update_ready, *task) }
-
     send_authorised
     send_game_data
-
     @units = Units.new(@player_id)
     @units.restore_queue.each{|task| after(:unit_production_ready, *task) }
-
     sync_units
-
     @coins_storage = CoinsStorage.new(@player_id)
     @coins_storage.compute!(@buildings.coins_storage_level)
-
     @coins_mine = CoinsMine.new(@player_id)
     @coins_mine.compute!(@buildings.coins_mine_level)
-
     sync_coins
-
     @score = Score.new(@player_id)
-
     sync_score
-
     @mana_storage = ManaStorage.new(@player_id)
-
     unless tutorial_complited?
       if Battle.exists?(uid)
         Battle.destroy_battle!(uid)
       end
-
       @mana_storage.compute_at_battle!(@score.current_level)
       sync_mana
-
-      Battle.create_tutorial_battle(battle_snapshot)
+      Battle.create_tutorial_battle(uid)
     else
       if Battle.exists?(uid)
         @mana_storage.compute_at_battle!(@score.current_level)
         sync_mana
-
         Battle.restore_opponent(uid)
       else
         @mana_storage.compute_at_shard!(@score.current_level)
         sync_mana
-
         register_in_lobby
-
         start_game_scene(:world)
       end
     end
-    # after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
   end
 
   def tutorial_complited?

@@ -3,17 +3,24 @@ require 'lib/battle/director_ai'
 module Battle
   class DirectorTutorial < Director
 
-    def initialize(player)
-      tutor_ai = {
+    def initialize(player_uid)
+      ai_data = {
         uid: :tutorial_ai,
         units:  {slinger:  15, crusader:  99999999},
         level: 0,
         username: 'Tutorial Ai'
       }
 
-      @player_uid = player[:uid]
+      player_data = {
+        uid: player_uid,
+        units:  {spearman:  5, crusader:  99999999},
+        level: 0,
+        username: 'Player'
+      }
 
-      super(player, tutor_ai, :tutorial)
+      @player_uid = player_uid
+
+      super(player_data, ai_data, :tutorial)
     end
 
     def broadcast
