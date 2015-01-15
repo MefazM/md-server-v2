@@ -17,9 +17,9 @@ module Player
 
     def compute!(level)
       data = Storage::GameData.coins_harvester level
-
       @income = data[:income]
       @capacity = data[:harvest_capacity]
+      save!
     end
 
     def harvest(max_earned)
@@ -42,6 +42,8 @@ module Player
         earned = @coins_mine_amount
         @coins_mine_amount = 0
       end
+
+      save!
 
       earned
     end

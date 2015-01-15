@@ -43,7 +43,6 @@ module Battle
         end
 
       when 'spawn_archers'
-
         spawn_unit(:tutorial_ai, 'slinger')
 
       when 'freeze_game'

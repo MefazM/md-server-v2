@@ -26,7 +26,7 @@ module Player
     def decrease(value)
       if @mana_storage_amount >= value
         @mana_storage_amount -= value
-
+        save!
         return true
       end
 
@@ -61,6 +61,8 @@ module Player
       if @mana_storage_amount >= @capacity
         @mana_storage_amount = @capacity
       end
+
+      save!
     end
 
   end

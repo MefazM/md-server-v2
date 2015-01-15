@@ -8,16 +8,13 @@ module Player
     def initialize(player_id)
       @player_id = player_id
       @redis_key = ['players', @player_id].join(':')
-
       restore_from_redis(@redis_key, { score: 0 }){ |v| v.to_i }
-
       current_level!
     end
 
     def current_level!
       level = 0
       Storage::GameData.player_levels.each{|score| level += 1 if @score > score[:level_at] }
-
       @level = level
     end
 
@@ -52,7 +49,7 @@ module Player
 
     def increase(value)
       @score += value
+      save!
     end
-
   end
 end

@@ -7,21 +7,17 @@ module Player
 
     def initialize(player_id)
       @redis_key = ['players', player_id].join(':')
-
       fields = {
         units: {},
         units_queue: {}
       }
-
       restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
     end
 
     def restore_queue
       not_ready_tasks = []
-
       @units_queue.each_value do |group|
         elapsed_time = Time.now.to_f - group[:started_at]
-
         group[:tasks].delete_if do |task|
           unit_uid = task[:uid].to_sym
           info = Storage::GameData.unit(unit_uid)
@@ -82,6 +78,8 @@ module Player
         task[:count] += 1
       end
 
+      save!
+
       first_in_queue
     end
 
@@ -95,6 +93,8 @@ module Player
 
       return nil unless group[:tasks].first
       group[:started_at] = Time.now.to_i
+
+      save!
 
       [group[:tasks].first[:uid], group[:construction_time]]
     end
@@ -112,6 +112,7 @@ module Player
 
     def mass_remove_units(units)
       units.each {|uid, count| @units.delete(uid) if (@units[uid] -= count) < 1 }
+      save!
     end
 
   end

@@ -66,11 +66,11 @@ module Player
     send_pong
   end
 
-  def save_player_timer
-    save!
-    # Run timer once more time
-    after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
-  end
+  # def save_player_timer
+  #   save!
+  #   # Run timer once more time
+  #   after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
+  # end
 
   def construct_building(building_uid)
     if @buildings.updateable?(building_uid)
@@ -213,7 +213,6 @@ module Player
   private
 
   def restore_player
-
     Reactor.link(self)
 
     @buildings = Buildings.new(@player_id)
@@ -265,8 +264,7 @@ module Player
         start_game_scene(:world)
       end
     end
-
-    after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
+    # after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
   end
 
   def tutorial_complited?
@@ -278,9 +276,7 @@ module Player
   end
 
   def save!
-
-    TheLogger.info("Save player: #{uid}...")
-
+    # TheLogger.info("Save player: #{uid}...")
     @coins_storage.save!
     @coins_mine.save!
     @score.save!

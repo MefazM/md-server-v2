@@ -8,7 +8,6 @@ module Player
     def initialize(player_id)
       @player_id = player_id
       @redis_key = ['players', @player_id].join(':')
-
       restore_from_redis(@redis_key, { coins_storage_amount: 0 }){ |v| v.to_i }
     end
 
@@ -17,8 +16,8 @@ module Player
     end
 
     def compute!(level)
-      # level = @buildings[@storage_building_uid] || 0
-      @capacity =  Storage::GameData.coins_storage_capacity level
+      @capacity = Storage::GameData.coins_storage_capacity(level)
+      save!
     end
 
     def remains
@@ -26,17 +25,17 @@ module Player
     end
 
     def put_coins(count)
-
       @coins_storage_amount += count
-
       if @coins_storage_amount >= @capacity
         @coins_storage_amount = @capacity
       end
+      save!
     end
 
     def make_payment(count)
       if @coins_storage_amount >= count
         @coins_storage_amount -= count
+        save!
         return true
       end
 

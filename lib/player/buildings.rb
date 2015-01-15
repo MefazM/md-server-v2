@@ -30,6 +30,8 @@ module Player
         false
       end
 
+      save!
+
       not_ready_tasks
     end
 
@@ -48,7 +50,7 @@ module Player
       update = @buildings_queue[uid]
       @buildings_queue.delete(uid)
       @buildings[uid] = update[:level]
-
+      save!
       update
     end
 
@@ -62,7 +64,7 @@ module Player
         level: update[:level],
         uid: update[:uid]
       }
-
+      save!
       # @async.after(period, [:building_update_ready, uid])
     end
 
