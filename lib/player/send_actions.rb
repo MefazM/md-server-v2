@@ -95,8 +95,8 @@ module Player
       send_all_data([Send::CAST_SPELL, data])
     end
 
-    def send_spawn_unit(data)
-      send_all_data([Send::SPAWN_UNIT, data])
+    def send_spawn_unit(uid, name, owner)
+      send_all_data([Send::SPAWN_UNIT, [uid, name, owner]])
     end
 
     def send_start_battle

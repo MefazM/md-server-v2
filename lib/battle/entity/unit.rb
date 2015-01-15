@@ -3,9 +3,9 @@ require "lib/battle/entity/base_entity"
 module Battle
   class Unit < BaseEntity
 
-    attr_reader :blockable_by, :distance_attack
+    attr_reader :distance_attack
 
-    attr_accessor :attack_power, :health_points, :movement_speed
+    attr_accessor :attack_power, :health_points, :movement_speed, :indestructible, :blockable_by
 
     def build_entity
       # initialization unit by prototype
@@ -16,6 +16,8 @@ module Battle
       @movement_speed = @prototype[:movement_speed]
       @blockable_by = @prototype[:blockable_by]
       @distance_attack = @prototype[:distance_attack]
+
+      @indestructible = false
     end
 
     def speed_scale
@@ -79,13 +81,17 @@ module Battle
     end
 
     def decrease_attack_power(value)
-      @attack_power -= value
+      @attack_power = 0.0 if (@attack_power -= value) < 0.0
     end
 
     def decrease_health_points(value)
-      puts("VIOLATE HP!! #{value}") if value < 0.0
-      force_sync!
-      @health_points -= value
+      unless @indestructible
+        puts("VIOLATE HP!! #{value}") if value < 0.0
+        force_sync!
+        @health_points -= value
+      end
+
+      @health_points
     end
 
     def increase_health_points(value)

@@ -39,6 +39,8 @@ module Player
   map_requests Receive::CAST_SPELL, as: :cast_spell, authorized: true
   map_requests Receive::SPAWN_UNIT, as: :spawn_unit, authorized: true
 
+  map_requests Receive::BATTLE_CUSTOM_ACTION, as: :battle_custom_action, authorized: true
+
   def process_login_action(login_data)
     authorise!(login_data)
 
@@ -204,6 +206,10 @@ module Player
     send_finish_battle(battle_results)
   end
 
+  def battle_custom_action(action_name)
+    Battle.call_custom_action(uid, action_name)
+  end
+
   private
 
   def restore_player
@@ -235,21 +241,36 @@ module Player
 
     @mana_storage = ManaStorage.new(@player_id)
 
-    if Battle.exists?(uid)
+    unless tutorial_complited?
+      if Battle.exists?(uid)
+        Battle.destroy_battle!(uid)
+      end
+
       @mana_storage.compute_at_battle!(@score.current_level)
       sync_mana
 
-      Battle.restore_opponent(uid)
+      Battle.create_tutorial_battle(battle_snapshot)
     else
-      @mana_storage.compute_at_shard!(@score.current_level)
-      sync_mana
+      if Battle.exists?(uid)
+        @mana_storage.compute_at_battle!(@score.current_level)
+        sync_mana
 
-      register_in_lobby
+        Battle.restore_opponent(uid)
+      else
+        @mana_storage.compute_at_shard!(@score.current_level)
+        sync_mana
 
-      start_game_scene(:world)
+        register_in_lobby
+
+        start_game_scene(:world)
+      end
     end
 
     after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
+  end
+
+  def tutorial_complited?
+    false
   end
 
   def player_rate

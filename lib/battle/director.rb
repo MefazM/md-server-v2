@@ -6,12 +6,12 @@ require 'lib/battle/spells/spells_factory'
 module Battle
   class Director
 
-    DEFAULT_UNITS_SPAWN_TIME = 5.0
+    DEFAULT_UNITS_SPAWN_TIME = 1.0
 
     include Reactor::React
     include CalculateBattleResults
 
-    def initialize(opponent_1, opponent_2)
+    def initialize(opponent_1, opponent_2, type = :battle)
       TheLogger.info("Initialize new battle...")
 
       @uid = ['battle', SecureRandom.hex(5)].join('_')
@@ -38,9 +38,16 @@ module Battle
         ids[1] => @opponents[ids[1]].battle_data
       }
 
-      broadcast {|proxy| proxy.send_create_new_battle(battle_data)}
+      broadcast do |proxy|
+        proxy.send_create_new_battle({
+          type: type,
+          battle_data: battle_data
+        })
+      end
 
       @spells_factory = SpellsFactory.new(@opponents)
+
+      ObjectSpace.define_finalizer(self, proc {|id| puts "Director removed! #{id}" })
     end
 
     def broadcast
@@ -52,14 +59,17 @@ module Battle
 
       ids = @opponents.keys
       player.proxy.send_create_new_battle({
-        ids[0] => @opponents[ids[0]].battle_data,
-        ids[1] => @opponents[ids[1]].battle_data
+        type: 'battle',
+        battle_data: {
+          ids[0] => @opponents[ids[0]].battle_data,
+          ids[1] => @opponents[ids[1]].battle_data
+        }
       })
 
       @opponents.each do |player_uid, opponent|
         opponent.pathway.each do |unit|
           unit.force_sync!
-          player.proxy.send_spawn_unit([unit.uid, unit.name, player_uid])
+          player.proxy.send_spawn_unit(unit.uid, unit.name, player_uid)
         end
       end
 
@@ -87,6 +97,9 @@ module Battle
     # 2. Calculating outer effects (user spells, ...)
     # 3. Default units spawn.
     def update(prev_iteration_time)
+
+      return unless @status == :in_progress
+
       if @next_wave_time < Time.now.to_i
         @next_wave_time = Time.now.to_i + DEFAULT_UNITS_SPAWN_TIME
         spawn_default_units
@@ -119,15 +132,22 @@ module Battle
 
     # Additional units spawning.
     def spawn_unit(player_id, unit_name)
-      spawn_data = @opponents[player_id].add_unit_to_pool(unit_name.to_sym)
+      unit = @opponents[player_id].add_unit_to_pool(unit_name.to_sym)
 
-      unless spawn_data.nil?
-        broadcast {|proxy| proxy.send_spawn_unit(spawn_data)}
-      end
+      broadcast {|proxy| proxy.send_spawn_unit(unit.uid, unit_name, player_id)} unless unit.nil?
+
+      unit
     end
     # Destroy battle director
-    def destroy
-      # @opponents.each_value { |opponent| opponent.destroy! }
+    def destroy!
+      @spells_factory.clear!
+      @status = :finished
+
+      unlink_battle
+    end
+
+    def alive?
+      @status != :finished
     end
 
     private
@@ -155,9 +175,7 @@ module Battle
     def finish_battle(loser_id)
       TheLogger.info("Battle finished, player (#{loser_id} - lose.)")
 
-      @spells_factory.clear!
-
-      @status = :finished
+      destroy!
 
       ids = @opponents.keys
       data = {
@@ -174,8 +192,6 @@ module Battle
         # opponent.destroy!
         Lobby.unfreeze!(uid)
       end
-
-      unlink_battle
     end
 
     def unlink_battle

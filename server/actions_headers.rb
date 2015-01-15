@@ -19,6 +19,8 @@ module Receive
   SPAWN_UNIT = :spu
 
   CREATE_AI_BATTLE = :cab
+
+  BATTLE_CUSTOM_ACTION = :bca
 end
 #RESPONSE
 module Send
@@ -43,6 +45,7 @@ module Send
   CANCEL_INVITE = :ci
 
   CREATE_NEW_BATTLE = :cnb
+  CREATE_NEW_TUTORIAL_BATTLE = :cntb
   CAST_SPELL = :cs
   SPAWN_UNIT = :spu
   START_BATTLE = :stb

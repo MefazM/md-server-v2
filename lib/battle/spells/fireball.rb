@@ -7,7 +7,7 @@ module Battle
       @units_to_kill = Storage::GameData.battle_score_settings[:circle_fire][:units_to_kill]
       @killed_units = 0
 
-      build_instant!
+      build_delayed!(@prototype[:time])
 
       send_view
     end

@@ -96,7 +96,7 @@ module Battle
       target = @chached_targets[attaker.uid]
       unless target.nil? || target.dead?
 
-        return target
+        return target if attaker.in_attack_range?(target)
       end
 
       opponent_units.find do |unit|
@@ -168,7 +168,7 @@ module Battle
         unit = Unit.new(name)
         @pathway << unit
 
-        return [unit.uid, name, @uid]
+        return unit#[unit.uid, name, @uid]
       end
 
       nil
