@@ -29,16 +29,12 @@ module Player
   map_requests Receive::CONSTUCT_BUILDING, as: :construct_building, authorized: true
   map_requests Receive::CONSTUCT_UNIT, as: :construct_unit, authorized: true
   map_requests Receive::UPDATE_LOBBY_DATA, as: :generate_lobby, authorized: true
-
-
   map_requests Receive::INVITE_OPPONENT_TO_BATTLE, as: :invite_opponent_to_battle, authorized: true
   map_requests Receive::CREATE_AI_BATTLE, as: :create_ai_battle, authorized: true
   map_requests Receive::RESPONSE_INVITATION_TO_BATTLE, as: :response_invitation_to_battle, authorized: true
-
   map_requests Receive::READY_TO_BATTLE, as: :ready_to_battle, authorized: true
   map_requests Receive::CAST_SPELL, as: :cast_spell, authorized: true
   map_requests Receive::SPAWN_UNIT, as: :spawn_unit, authorized: true
-
   map_requests Receive::BATTLE_CUSTOM_ACTION, as: :battle_custom_action, authorized: true
 
   def process_login_action(login_data)
@@ -200,6 +196,11 @@ module Player
     @score.increase(battle_results[:score])
     sync_score
 
+    if battle_results[:level] < @score.current_level!
+      battle_results[:levelup] = Storage::GameData.player_levels[@score.current_level]
+      battle_results[:levelup][:level] = @score.current_level
+    end
+
     @mana_storage.compute_at_battle!(@buildings.coins_mine_level)
     sync_mana
 
@@ -229,6 +230,7 @@ module Player
     @score = Score.new(@player_id)
     sync_score
     @mana_storage = ManaStorage.new(@player_id)
+
     unless tutorial_complited?
       if Battle.exists?(uid)
         Battle.destroy_battle!(uid)

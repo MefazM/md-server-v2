@@ -34,7 +34,8 @@ module Battle
         score: battle_score.to_i,
         coins: calculate_coins(battle_score),
         fast_battle_score: fast_battle_score,
-        lost_units: statistics[:units][:lost]
+        lost_units: statistics[:units][:lost],
+        level: statistics[:level],
       }
     end
 

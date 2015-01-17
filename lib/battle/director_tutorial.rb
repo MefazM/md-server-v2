@@ -20,7 +20,7 @@ module Battle
 
       @player_uid = player_uid
 
-      super(player_data, ai_data, :tutorial)
+      super(player_data, ai_data)
     end
 
     def broadcast

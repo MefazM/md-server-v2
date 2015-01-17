@@ -11,7 +11,7 @@ module Battle
     include Reactor::React
     include CalculateBattleResults
 
-    def initialize(opponent_1, opponent_2, type = :battle)
+    def initialize(opponent_1, opponent_2)
       TheLogger.info("Initialize new battle...")
 
       @uid = ['battle', SecureRandom.hex(5)].join('_')
@@ -40,7 +40,6 @@ module Battle
 
       broadcast do |proxy|
         proxy.send_create_new_battle({
-          type: type,
           battle_data: battle_data
         })
       end
@@ -59,7 +58,6 @@ module Battle
 
       ids = @opponents.keys
       player.proxy.send_create_new_battle({
-        type: 'battle',
         battle_data: {
           ids[0] => @opponents[ids[0]].battle_data,
           ids[1] => @opponents[ids[1]].battle_data
@@ -179,9 +177,6 @@ module Battle
 
       ids = @opponents.keys
       data = {
-        battle_time: Time.now.to_i - @start_time,
-        winner_id: @opponents_inverted[loser_id].uid,
-        loser_id: loser_id,
         ids[0] => calculate_battle_reward(ids[0], ids[0] != loser_id),
         ids[1] => calculate_battle_reward(ids[1], ids[1] != loser_id)
       }

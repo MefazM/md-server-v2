@@ -15,7 +15,8 @@ module Player
         player: {
           uid: uid,
           email: @email,
-          username: @username
+          username: @username,
+          is_tutorial_complited: tutorial_complited?,
         },
         buildings: @buildings.export
       }])
