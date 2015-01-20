@@ -36,6 +36,8 @@ module Player
   map_requests Receive::CAST_SPELL, as: :cast_spell, authorized: true
   map_requests Receive::SPAWN_UNIT, as: :spawn_unit, authorized: true
   map_requests Receive::BATTLE_CUSTOM_ACTION, as: :battle_custom_action, authorized: true
+  map_requests Receive::FAST_COMPLITE_BUILDING, as: :fast_complite_building, authorized: true
+  map_requests Receive::FAST_COMPLITE_UNITS_QUEUE, as: :fast_complite_units_queue, authorized: true
 
   def process_login_action(login_data)
     authorise!(login_data)
@@ -62,21 +64,15 @@ module Player
     send_pong
   end
 
-  # def save_player_timer
-  #   save!
-  #   # Run timer once more time
-  #   after(:save_player_timer, nil, SAVE_TO_REDIS_INTERVAL)
-  # end
-
   def construct_building(building_uid)
     if @buildings.updateable?(building_uid)
       update = @buildings.update_data(building_uid)
 
       if @coins_storage.make_payment(update[:price])
 
-        @buildings.enqueue(update)
-
-        after(:building_update_ready, update[:uid], update[:production_time])
+        @buildings.enqueue(update) do |uid, time|
+          after(:building_update_ready, uid, time)
+        end
 
         sync_building(update, false)
         sync_coins
@@ -88,18 +84,30 @@ module Player
   end
 
   def building_update_ready(building_uid)
-    updated = @buildings.complite(building_uid)
-    if updated
+    update = @buildings.complite(building_uid)
+    if update
       #TODO: refactor this case
-      case updated[:uid]
+      case update[:uid]
       when Storage::GameData.coin_generator_uid
 
       when Storage::GameData.storage_building_uid
         @coins_storage.compute!(@buildings.coins_storage_level)
       end
 
-      sync_building(updated, true)
+      sync_building(update, true)
     end
+  end
+
+  def fast_complite_building(building_uid)
+    if @buildings.enqued?(building_uid)
+      @buildings.cancel_timer(building_uid)
+      building_update_ready(building_uid)
+    end
+  end
+
+  def fast_complite_units_queue(building_uid)
+    @units.complite_group(building_uid)
+    sync_units
   end
 
   def construct_unit(unit_uid)
@@ -110,8 +118,8 @@ module Player
     if @buildings.exists?(building_uid, building_level)
       if @coins_storage.make_payment(info[:price])
 
-        if @units.enqueue(info)
-          after(:unit_production_ready, unit_uid, info[:production_time])
+        @units.enqueue(info) do |uid, period|
+          after(:unit_production_ready, uid, period)
         end
 
         sync_units
@@ -123,10 +131,9 @@ module Player
   end
 
   def unit_production_ready(unit_uid)
-    info = Storage::GameData.unit(unit_uid)
-    next_taks = @units.complite(info)
-
-    after(:unit_production_ready, *next_taks) if next_taks
+    next_taks = @units.complite(Storage::GameData.unit(unit_uid)) do |uid, time|
+      after(:unit_production_ready, uid, time)
+    end
 
     sync_units
   end
@@ -215,23 +222,34 @@ module Player
 
   def restore_player
     Reactor.link(self)
+
     @buildings = Buildings.new(@player_id)
-    @buildings.restore_queue.each{|task| after(:building_update_ready, *task) }
+    @buildings.restore_queue do |uid, time_left|
+      after(:building_update_ready, uid, time_left)
+    end
+
     send_authorised
     send_game_data
+
     @units = Units.new(@player_id)
-    @units.restore_queue.each{|task| after(:unit_production_ready, *task) }
+    @units.restore_queue do |uid, period|
+      after(:unit_production_ready, uid, period)
+    end
+
     sync_units
+
     @coins_storage = CoinsStorage.new(@player_id)
     @coins_storage.compute!(@buildings.coins_storage_level)
     @coins_mine = CoinsMine.new(@player_id)
     @coins_mine.compute!(@buildings.coins_mine_level)
     sync_coins
+
     @score = Score.new(@player_id)
     sync_score
+
     @mana_storage = ManaStorage.new(@player_id)
 
-    unless tutorial_complited?
+    unless true#tutorial_complited?
       if Battle.exists?(uid)
         Battle.destroy_battle!(uid)
       end

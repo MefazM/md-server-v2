@@ -21,6 +21,9 @@ module Receive
   CREATE_AI_BATTLE = :cab
 
   BATTLE_CUSTOM_ACTION = :bca
+
+  FAST_COMPLITE_BUILDING = :fcb
+  FAST_COMPLITE_UNITS_QUEUE = :fcuq
 end
 #RESPONSE
 module Send

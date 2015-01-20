@@ -14,6 +14,8 @@ module Player
       }
 
       restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
+
+      @timers_handlers = {}
     end
 
     def restore_queue
@@ -25,14 +27,11 @@ module Player
           true
         end
 
-        not_ready_tasks << [update[:uid], time_left]
-
+        @timers_handlers[uid] = yield(uid, time_left)
         false
       end
 
       save!
-
-      not_ready_tasks
     end
 
     def update_data(uid)
@@ -51,6 +50,7 @@ module Player
       @buildings_queue.delete(uid)
       @buildings[uid] = update[:level]
       save!
+
       update
     end
 
@@ -62,10 +62,22 @@ module Player
         adding_time: Time.now.to_i,
         construction_time: period,
         level: update[:level],
-        uid: update[:uid]
+        uid: uid
       }
+
+      @timers_handlers[uid] = yield(uid, period)
+
       save!
       # @async.after(period, [:building_update_ready, uid])
+    end
+
+    def enqued?(uid)
+      @timers_handlers.key?(uid.to_sym)
+    end
+
+    def cancel_timer(uid)
+      handler = @timers_handlers[uid.to_sym]
+      EventMachine.cancel_timer(handler) unless handler.nil?
     end
 
     def coins_mine_level

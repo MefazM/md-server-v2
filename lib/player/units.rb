@@ -12,12 +12,14 @@ module Player
         units_queue: {}
       }
       restore_from_redis(@redis_key, fields){|v| JSON.parse(v, {symbolize_names: true})}
+
+      @timers_handlers = {}
     end
 
     def restore_queue
-      not_ready_tasks = []
-      @units_queue.each_value do |group|
+      @units_queue.each do |group_by, group|
         elapsed_time = Time.now.to_f - group[:started_at]
+
         group[:tasks].delete_if do |task|
           unit_uid = task[:uid].to_sym
           info = Storage::GameData.unit(unit_uid)
@@ -33,7 +35,7 @@ module Player
             group[:started_at] = Time.now.to_i - (info[:production_time] - period)
             group[:construction_time] = info[:production_time]
 
-            not_ready_tasks << [unit_uid, period]
+            @timers_handlers[group_by] = yield(unit_uid, period)
 
             break
           end
@@ -42,13 +44,11 @@ module Player
 
         end
       end
-
-      not_ready_tasks
     end
 
     def enqueue(unit_data)
       group_by = unit_data[:depends_on_building_uid].to_sym
-      first_in_queue = false
+
       @units_queue[group_by] = {
         started_at: nil,
         tasks: []
@@ -63,7 +63,7 @@ module Player
         group[:started_at] = Time.now.to_i
         group[:construction_time] = period
 
-        first_in_queue = true
+        @timers_handlers[group_by] = yield(uid, period)
       end
 
       task = group[:tasks].find{|t| t[:uid] == uid }
@@ -79,8 +79,18 @@ module Player
       end
 
       save!
+    end
 
-      first_in_queue
+    def complite_group(group_by)
+      @units_queue[group_by.to_sym][:tasks].each do |task|
+        unit_uid = task[:uid].to_sym
+        @units[unit_uid] = (@units[unit_uid] || 0) + task[:count]
+      end
+
+      @units_queue[group_by.to_sym][:tasks].clear
+
+      handler = @timers_handlers[group_by.to_sym]
+      EventMachine.cancel_timer(handler) unless handler.nil?
     end
 
     def complite(unit_data)
@@ -91,12 +101,12 @@ module Player
 
       group[:tasks].shift if (group[:tasks].first[:count] -= 1) < 1
 
-      return nil unless group[:tasks].first
-      group[:started_at] = Time.now.to_i
+      if group[:tasks].first
+        group[:started_at] = Time.now.to_i
+        @timers_handlers[unit_data[:depends_on_building_uid]] = yield(group[:tasks].first[:uid], group[:construction_time])
+      end
 
       save!
-
-      [group[:tasks].first[:uid], group[:construction_time]]
     end
 
     def export

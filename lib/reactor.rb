@@ -13,9 +13,10 @@ module Reactor
     end
 
     def after(method, payload, after_interval)
-      EventMachine::next_tick do
-        EventMachine::Timer.new(after_interval) { @worker << [self, method, payload] }
-      end
+      # EventMachine::next_tick {
+        # EventMachine::Timer.new(after_interval) { @worker << [self, method, payload] }
+        EventMachine.add_timer(after_interval) { @worker << [self, method, payload] }
+      # }
     end
 
     def alive?
