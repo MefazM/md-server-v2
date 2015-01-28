@@ -49,6 +49,8 @@ module Player
       update = @buildings_queue[uid]
       @buildings_queue.delete(uid)
       @buildings[uid] = update[:level]
+      @timers_handlers[uid] = nil
+
       save!
 
       update
@@ -78,6 +80,7 @@ module Player
     def cancel_timer(uid)
       handler = @timers_handlers[uid.to_sym]
       handler.cancel unless handler.nil?
+      @timers_handlers[uid.to_sym] = nil
     end
 
     def coins_mine_level
