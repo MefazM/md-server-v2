@@ -90,7 +90,7 @@ module Player
       @units_queue[group_by.to_sym][:tasks].clear
 
       handler = @timers_handlers[group_by.to_sym]
-      EventMachine.cancel_timer(handler) unless handler.nil?
+      handler.cancel unless handler.nil?
     end
 
     def complite(unit_data)

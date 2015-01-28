@@ -24,6 +24,7 @@ module Receive
 
   FAST_COMPLITE_BUILDING = :fcb
   FAST_COMPLITE_UNITS_QUEUE = :fcuq
+  SET_TUTORIAL_STATUS = :sts
 end
 #RESPONSE
 module Send

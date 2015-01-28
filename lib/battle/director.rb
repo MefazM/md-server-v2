@@ -95,7 +95,6 @@ module Battle
     # 2. Calculating outer effects (user spells, ...)
     # 3. Default units spawn.
     def update(prev_iteration_time)
-
       return unless @status == :in_progress
 
       if @next_wave_time < Time.now.to_i
@@ -131,9 +130,7 @@ module Battle
     # Additional units spawning.
     def spawn_unit(player_id, unit_name)
       unit = @opponents[player_id].add_unit_to_pool(unit_name.to_sym)
-
       broadcast {|proxy| proxy.send_spawn_unit(unit.uid, unit_name, player_id)} unless unit.nil?
-
       unit
     end
     # Destroy battle director

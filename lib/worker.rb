@@ -1,29 +1,37 @@
+require 'timers'
 class Worker
   def initialize
     @queue = Queue.new
-    @thread = Thread.new do
-
-      loop {
+    @timers = Timers::Group.new
+    @reactor_thread = Thread.new do
+      loop do
         begin
+          unless @queue.empty?
+            actor, method, payload = @queue.deq(false)
+            next unless actor || actor.alive?
+            payload.nil? ? actor.method(method).call : actor.method(method).call(payload)
+          end
 
-          actor, method, payload = @queue.deq
-
-          next unless actor || actor.alive?
-
-          m = actor.method(method)
-
-          payload ? m.call(payload) : m.call
+          unless @timers.wait_interval.nil? || @timers.wait_interval >= 0.0
+            @timers.fire
+          end
 
         rescue Exception => e
           TheLogger.error <<-MSG
-            Can't call actor by name= '#{actor.inspect}', action: '#{method}'
+            Can't call actor '#{actor.class.to_s}', action: '#{method}'
             #{e}
             #{e.backtrace.join("\n")}
           MSG
         end
-
-      }
+      end
     end
+
+    Thread.current[:timers] = @timers
+    Thread.current[:worker] = self
+  end
+
+  def after(period, actor, method, payload)
+    @timers.after(period) { @queue << [actor, method, payload] }
   end
 
   def <<(data)

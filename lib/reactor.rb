@@ -7,16 +7,12 @@ module Reactor
       @worker = Reactor.worker
     end
 
-    # async method: :sync, payload: payload, after: 20
     def async(method, payload)
       @worker << [self, method, payload]
     end
 
-    def after(method, payload, after_interval)
-      # EventMachine::next_tick {
-        # EventMachine::Timer.new(after_interval) { @worker << [self, method, payload] }
-        EventMachine.add_timer(after_interval) { @worker << [self, method, payload] }
-      # }
+    def after(method, payload, interval)
+      @worker.after(interval, self, method, payload)
     end
 
     def alive?
@@ -25,9 +21,7 @@ module Reactor
   end
 
   class << self
-
     attr_accessor :num_threads
-
     @@linked_actors = ThreadSafe::Hash.new
 
     def configure

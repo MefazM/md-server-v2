@@ -77,7 +77,7 @@ module Player
 
     def cancel_timer(uid)
       handler = @timers_handlers[uid.to_sym]
-      EventMachine.cancel_timer(handler) unless handler.nil?
+      handler.cancel unless handler.nil?
     end
 
     def coins_mine_level

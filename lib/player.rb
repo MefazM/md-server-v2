@@ -13,12 +13,9 @@ require 'lib/player/lobby'
 require 'lib/ai_generator'
 
 module Player
-  SAVE_TO_REDIS_INTERVAL = 20
-
   include Authorisation
   include RequestsDispatcher
   include SendActions
-
   include Lobby::Inviteable
   include Battle::React
 
@@ -38,11 +35,17 @@ module Player
   map_requests Receive::BATTLE_CUSTOM_ACTION, as: :battle_custom_action, authorized: true
   map_requests Receive::FAST_COMPLITE_BUILDING, as: :fast_complite_building, authorized: true
   map_requests Receive::FAST_COMPLITE_UNITS_QUEUE, as: :fast_complite_units_queue, authorized: true
+  map_requests Receive::SET_TUTORIAL_STATUS, as: :set_tutorial_status, authorized: true
 
   def process_login_action(login_data)
     authorise!(login_data)
-
     restore_player
+  end
+
+  def set_tutorial_status(status)
+    path = ['players', uid].join(':')
+    puts(status)
+    Storage.redis_pool.with {|conn| conn.hset( path, 'is_tutorial_ready', status)}
   end
 
   def uid
@@ -67,17 +70,13 @@ module Player
   def construct_building(building_uid)
     if @buildings.updateable?(building_uid)
       update = @buildings.update_data(building_uid)
-
       if @coins_storage.make_payment(update[:price])
-
         @buildings.enqueue(update) do |uid, time|
           after(:building_update_ready, uid, time)
         end
-
         sync_building(update, false)
         sync_coins
       else
-
         send_notification(:low_cash)
       end
     end
@@ -114,14 +113,11 @@ module Player
     info = Storage::GameData.unit(unit_uid)
     building_uid = info[:depends_on_building_uid]
     building_level = info[:depends_on_building_level]
-
     if @buildings.exists?(building_uid, building_level)
       if @coins_storage.make_payment(info[:price])
-
         @units.enqueue(info) do |uid, period|
           after(:unit_production_ready, uid, period)
         end
-
         sync_units
         sync_coins
       else
@@ -145,7 +141,6 @@ module Player
 
   def create_ai_battle(ai_type)
     ai_data = AiGenerator.generate(ai_type, @score.current_level)
-
     Battle.create_ai_battle(battle_snapshot, ai_data)
   end
 
@@ -163,9 +158,7 @@ module Player
 
   def cast_spell(data)
     prototype = Storage::GameData.spell_data(data[:name])
-
     @mana_storage.compute_at_battle!(@buildings.coins_mine_level)
-
     if prototype && @mana_storage.decrease(prototype[:mana_cost])
       Battle.cast_spell(uid, data)
     else
@@ -249,7 +242,7 @@ module Player
 
     @mana_storage = ManaStorage.new(@player_id)
 
-    unless true#tutorial_complited?
+    unless tutorial_complited?
       if Battle.exists?(uid)
         Battle.destroy_battle!(uid)
       end
@@ -271,7 +264,8 @@ module Player
   end
 
   def tutorial_complited?
-    false
+    path = ['players', uid].join(':')
+    Storage.redis_pool.with {|conn| conn.hget(path, 'is_tutorial_ready')}
   end
 
   def player_rate

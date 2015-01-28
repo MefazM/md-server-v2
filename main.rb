@@ -3,12 +3,9 @@ require 'pry'
 require 'version'
 require 'server/server'
 require 'lib/reactor'
-
 require 'storage/storage'
 require 'dotenv'
-
 require 'lib/player/lobby'
-
 require 'json'
 
 Dotenv.load
@@ -39,5 +36,4 @@ Server.configure do |conf|
 end
 
 Lobby.dispatch!
-
 Server.dispatch!
