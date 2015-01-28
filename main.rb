@@ -7,6 +7,7 @@ require 'storage/storage'
 require 'dotenv'
 require 'lib/player/lobby'
 require 'json'
+require 'wannabe_bool'
 
 Dotenv.load
 

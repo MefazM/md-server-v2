@@ -44,8 +44,7 @@ module Player
 
   def set_tutorial_status(status)
     path = ['players', uid].join(':')
-    puts(status)
-    Storage.redis_pool.with {|conn| conn.hset( path, 'is_tutorial_ready', status)}
+    Storage.redis_pool.with {|conn| conn.hset( path, 'is_tutorial_ready', status.to_b)}
   end
 
   def uid
@@ -265,7 +264,7 @@ module Player
 
   def tutorial_complited?
     path = ['players', uid].join(':')
-    Storage.redis_pool.with {|conn| conn.hget(path, 'is_tutorial_ready')}
+    Storage.redis_pool.with {|conn| conn.hget(path, 'is_tutorial_ready')}.to_b
   end
 
   def player_rate

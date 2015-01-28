@@ -36,6 +36,7 @@ GEM
     thread_safe (0.3.4-java)
     timers (4.0.1)
       hitimes
+    wannabe_bool (0.1.0)
 
 PLATFORMS
   java
@@ -55,3 +56,4 @@ DEPENDENCIES
   redis (~> 3.0.1)
   thread_safe
   timers (~> 4.0.1)
+  wannabe_bool
