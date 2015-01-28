@@ -11,7 +11,7 @@ module Player
 
       restore_from_redis(@redis_key, {
         last_harvest_time: Time.now.to_i,
-        coins_mine_amount: 0
+        coins_mine_amount: 9999
       }) {|v| v.to_i }
     end
 
