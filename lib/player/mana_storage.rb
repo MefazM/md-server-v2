@@ -15,8 +15,18 @@ module Player
       }){|v| v.to_i }
     end
 
-    def compute_at_shard!(level)
+    def compute_at_shard!(level, force_income_type_to = nil)
       compute!(level, :income_at_shard)
+    end
+
+    def switch_to_shard!(level)
+      settings = Storage::GameData.mana_storage(level)
+      @income = settings[:income_at_shard]
+    end
+
+    def switch_to_battle!(level)
+      settings = Storage::GameData.mana_storage(level)
+      @income = settings[:income_at_shard]
     end
 
     def compute_at_battle!(level)
@@ -52,7 +62,7 @@ module Player
       d_time = current_time - @last_mana_compute_time
       @last_mana_compute_time = current_time
 
-      settings = Storage::GameData.mana_storage level
+      settings = Storage::GameData.mana_storage(level)
 
       @capacity = settings[:capacity]
       @income = settings[income_type]

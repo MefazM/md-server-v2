@@ -152,12 +152,16 @@ module Player
   end
 
   def ready_to_battle
+    @mana_storage.compute_at_shard!(@score.current_level)
+    @mana_storage.switch_to_battle!(@score.current_level)
+    sync_mana
+
     Battle.set_opponent_ready(uid)
   end
 
   def cast_spell(data)
     prototype = Storage::GameData.spell_data(data[:name])
-    @mana_storage.compute_at_battle!(@buildings.coins_mine_level)
+    @mana_storage.compute_at_battle!(@score.current_level)
     if prototype && @mana_storage.decrease(prototype[:mana_cost])
       Battle.cast_spell(uid, data)
     else
@@ -200,7 +204,8 @@ module Player
       battle_results[:levelup][:level] = @score.current_level
     end
 
-    @mana_storage.compute_at_battle!(@buildings.coins_mine_level)
+    @mana_storage.compute_at_battle!(@score.current_level)
+    @mana_storage.switch_to_shard!(@score.current_level)
     sync_mana
 
     send_finish_battle(battle_results)
