@@ -113,6 +113,10 @@ module Player
       buildings
     end
 
+    def clear!
+      @buildings.clear
+    end
+
     def save!
       save_to_redis(@redis_key, [:buildings, :buildings_queue]){|value| JSON.generate(value)}
     end

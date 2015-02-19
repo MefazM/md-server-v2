@@ -45,6 +45,8 @@ module Player
   def set_tutorial_status(status)
     path = ['players', uid].join(':')
     Storage.redis_pool.with {|conn| conn.hset( path, 'is_tutorial_ready', status.to_b)}
+
+    @buildings.clear! unless status.to_b
   end
 
   def uid
