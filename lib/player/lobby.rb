@@ -128,14 +128,12 @@ module Lobby
           freeze!(player_id)
           # Player accepted battle
           @invites[player_id].each do |invite|
-            Reactor.actor(invite[:sender_uid]).send_cancel_invite_to_battle
+            Reactor.actor(invite[:sender_uid]).send_cancel_invite_to_battle(true)
           end
           @invites[player_id].clear
 
           begin
-
             Battle.create_battle(invite[:sender_uid], player_id)
-
           rescue Exception => e
             TheLogger.error <<-MSG
               Error while invitation processing. Invite: #{invite_info.inspect}

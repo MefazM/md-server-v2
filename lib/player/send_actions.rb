@@ -84,8 +84,8 @@ module Player
       send_all_data([Send::INVITE_TO_BATTLE, data])
     end
 
-    def send_cancel_invite_to_battle
-      send_all_data([Send::CANCEL_INVITE])
+    def send_cancel_invite_to_battle(accepted = false)
+      send_all_data([Send::CANCEL_INVITE, {accepted: accepted}])
     end
 
     def send_create_new_battle(data)
