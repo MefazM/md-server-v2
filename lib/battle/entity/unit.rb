@@ -72,7 +72,7 @@ module Battle
     end
 
     def decrease_movement_speed(value)
-      @movement_speed -= value
+      @movement_speed = 0.005 if (@movement_speed -= value) <= 0.0
       force_sync!
     end
 
