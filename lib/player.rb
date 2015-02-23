@@ -89,9 +89,11 @@ module Player
       #TODO: refactor this case
       case update[:uid]
       when Storage::GameData.coin_generator_uid
-
+        @coins_mine.compute!(@buildings.coins_mine_level)
+        sync_coins
       when Storage::GameData.storage_building_uid
         @coins_storage.compute!(@buildings.coins_storage_level)
+        sync_coins
       end
 
       sync_building(update, true)
