@@ -8,7 +8,7 @@ module Player
     def initialize(player_id)
       @player_id = player_id
       @redis_key = ['players', @player_id].join(':')
-      restore_from_redis(@redis_key, { coins_storage_amount: 0 }){ |v| v.to_i }
+      restore_from_redis(@redis_key, { coins_storage_amount: 1000 }){ |v| v.to_i }
     end
 
     def full?
