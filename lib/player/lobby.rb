@@ -37,7 +37,7 @@ module Lobby
         return
       end
 
-      if frozen?(opponent_uid) || Reactor.actor(opponent_uid).tutorial_complited?
+      if frozen?(opponent_uid) || !Reactor.actor(opponent_uid).tutorial_complited?
         Reactor.actor(sender_uid).send_cancel_invite_to_battle
         return
       end
