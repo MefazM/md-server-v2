@@ -219,6 +219,11 @@ module Player
     Battle.call_custom_action(uid, action_name)
   end
 
+  def tutorial_complited?
+    path = ['players', uid].join(':')
+    Storage.redis_pool.with {|conn| conn.hget(path, 'is_tutorial_ready')}.to_b
+  end
+
   private
 
   def restore_player
@@ -269,11 +274,6 @@ module Player
         start_game_scene(:world)
       end
     end
-  end
-
-  def tutorial_complited?
-    path = ['players', uid].join(':')
-    Storage.redis_pool.with {|conn| conn.hget(path, 'is_tutorial_ready')}.to_b
   end
 
   def player_rate
