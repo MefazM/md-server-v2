@@ -5,7 +5,7 @@ module AiGenerator
       ai_easy:  {
         units:  {spearman:  10, crusader:  99999999},
         uid:  'ai',
-        activity_period:  9.0,
+        activity_period:  7.0,
 
         level:  -1,
 
@@ -19,7 +19,7 @@ module AiGenerator
       ai_normal:  {
         units:  {spearman:  50, slinger:  15, scout:  10, crusader:  99999999},
         uid:  'ai',
-        activity_period:  6.0,
+        activity_period:  4.0,
         level:  0,
 
         username:  "Galkir Cantilever (normal)",
@@ -32,7 +32,7 @@ module AiGenerator
       ai_hard:  {
         units:  {spearman:  250, adept:  20, slinger:  150, scout:  50, crusader:  99999999},
         uid:  'ai',
-        activity_period:  3.0,
+        activity_period:  2.0,
 
         level:  2,
 

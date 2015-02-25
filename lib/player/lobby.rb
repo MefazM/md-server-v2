@@ -18,7 +18,6 @@ module Lobby
   end
 
   class << self
-
     def register(rate, player_id)
       Storage.redis_pool.with {|conn| conn.ZADD('lobby:players_rate', rate, player_id)}
     end
@@ -38,7 +37,7 @@ module Lobby
         return
       end
 
-      if frozen?(sender_uid)
+      if frozen?(opponent_uid) || Reactor.actor(opponent_uid).tutorial_complited?
         Reactor.actor(sender_uid).send_cancel_invite_to_battle
         return
       end
