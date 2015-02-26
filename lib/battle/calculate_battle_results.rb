@@ -58,7 +58,7 @@ module Battle
 
       player_level = statistics[:level].zero? ? 1 : statistics[:level]
 
-      opponent_level / player_level
+      opponent_level.to_f / player_level.to_f
     end
 
     def calculate_spells_score(statistics)
